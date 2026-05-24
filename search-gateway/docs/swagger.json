@@ -1,0 +1,236 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Bot Accessible Search Engine for web searching and URL fetching.",
+        "title": "Searchbase Search Gateway API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/v1/fetch": {
+            "post": {
+                "description": "Use this tool ONLY when you already have a specific, exact URL (http://...) that you want to extract and read. Do NOT pass search queries into this tool.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "fetchSingleUrl"
+                ],
+                "summary": "Get a website content",
+                "operationId": "fetchUrl",
+                "parameters": [
+                    {
+                        "description": "Fetch request payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.FetchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.FetchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/healthz": {
+            "get": {
+                "description": "Checks the API server is running and responds with a 200 status.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Health Check"
+                ],
+                "summary": "API Health Check",
+                "operationId": "healthCheck",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/search": {
+            "post": {
+                "description": "Use this tool to search the internet for a general query. Do NOT use this if you already have a specific URL.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Search the Web",
+                "operationId": "webSearch",
+                "parameters": [
+                    {
+                        "description": "Search request payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/search.Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/search.Result"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.FetchRequest": {
+            "type": "object",
+            "required": [
+                "url"
+            ],
+            "properties": {
+                "js_render": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com"
+                }
+            }
+        },
+        "api.FetchResponse": {
+            "type": "object",
+            "properties": {
+                "markdown": {
+                    "type": "string"
+                },
+                "snippet": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "search.Request": {
+            "type": "object",
+            "required": [
+                "query"
+            ],
+            "properties": {
+                "engine": {
+                    "type": "string",
+                    "example": "auto"
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "provider": {
+                    "description": "TODO: this ignored right now, Add support for multiple search providers",
+                    "type": "string",
+                    "example": "auto"
+                },
+                "query": {
+                    "type": "string",
+                    "example": "who is the president"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "wt-wt"
+                },
+                "safesearch": {
+                    "type": "string",
+                    "example": "moderate"
+                },
+                "timelimit": {
+                    "type": "string",
+                    "example": "d"
+                }
+            }
+        },
+        "search.Result": {
+            "type": "object",
+            "properties": {
+                "snippet": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

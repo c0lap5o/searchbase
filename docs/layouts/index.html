@@ -1,0 +1,28 @@
+{{ define "main" }}
+  <section class="docs-home">
+    <p class="eyebrow">Documentation</p>
+    <h1>Searchbase Docs</h1>
+    <p class="lead">Find setup guides, MCP integration, REST API details, architecture notes, and self-hosting references.</p>
+  </section>
+  <section class="feature-grid">
+    <a class="feature-card" href="/docs/getting-started/">
+      <span>Getting Started</span>
+      <p>Install Searchbase locally, deploy to Kubernetes, and configure environment variables.</p>
+    </a>
+    <a class="feature-card" href="/docs/mcp-integration/">
+      <span>MCP Integration</span>
+      <p>Plug into OpenWebUI, Claude Desktop, Cursor, LM Studio, and other MCP clients.</p>
+    </a>
+    <a class="feature-card" href="/docs/api-reference/">
+      <span>REST API</span>
+      <p>Simple search and fetch endpoints for custom agents and scripts.</p>
+    </a>
+    <a class="feature-card" href="/docs/architecture/">
+      <span>Privacy First</span>
+      <p>Structured logs avoid raw IPs, user agents, and query correlation.</p>
+    </a>
+  </section>
+  <article class="doc home-doc">
+    {{ .Content }}
+  </article>
+{{ end }}

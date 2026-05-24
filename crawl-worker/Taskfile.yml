@@ -1,0 +1,36 @@
+version: '3'
+
+vars:
+  NAME: "crawl-worker"
+  CONTAINER_REGISTRY: "ghcr.io/coolapso/searchbase"
+  REPOSITORY: "github.com/coolapso/searchbase"
+
+tasks:
+  container:build:
+    desc: "Build the search-gateway container image"
+    cmds:
+      - docker buildx build -t {{.NAME}}:latest -f Containerfile .
+
+  container:build:amd64:
+    desc: "Build the container image for arm"
+    cmds:
+      - docker buildx build --platform linux/amd64 -t {{.NAME}}:latest -f Containerfile .
+
+  container:build:arm:
+    desc: "Build the container image for arm"
+    cmds:
+      - docker buildx build --platform linux/arm64 -t {{.NAME}}:latest -f Containerfile .
+
+  container:build:all:
+    desc: "Build the container image for arm"
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 -t {{.NAME}}:latest -f Containerfile .
+
+  container:push:
+    desc: "Push images to the registry"
+    cmds:
+      - |
+        git fetch --tags
+        version=$(git describe --tags --always --dirty="-dev")
+        name={{.CONTAINER_REGISTRY}}/{{.NAME}}
+        docker buildx build --push --platform linux/amd64,linux/arm64 -t ${name}:latest -t ${name}:${version#v} -f Containerfile .

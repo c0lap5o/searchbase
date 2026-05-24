@@ -1,0 +1,149 @@
+---
+title: "Self Hosting"
+weight: 50
+---
+# Self Hosting
+
+Searchbase can run with different search backends depending on how much infrastructure and control you want.
+
+## Deployment Options
+
+Searchbase can run locally with Docker Compose examples or in production on Kubernetes.
+
+## Docker Compose Examples
+
+The repository includes Compose examples under `examples/compose/` for quickly trying each backend.
+
+{{< hint warning >}}
+The Docker Compose files are demonstration examples only. They are useful for local testing and learning how services connect, but they are not production deployment templates.
+{{< /hint >}}
+
+Native DuckDuckGo backend:
+
+```bash
+docker compose -f examples/compose/docker-compose.native.yml up
+```
+
+DDGS backend:
+
+```bash
+docker compose -f examples/compose/docker-compose.ddgs.yml up
+```
+
+SearXNG backend:
+
+```bash
+docker compose -f examples/compose/docker-compose.searxng.yml up
+```
+
+The root `docker-compose.yml` is intended for development and may start more services than a normal deployment needs.
+
+```bash
+docker compose up --build
+```
+
+Use it when actively developing Searchbase, not as a production baseline.
+
+## Kubernetes
+
+```bash
+kubectl apply -f k8s/
+```
+
+For production self-hosting, prefer Kubernetes or your own hardened container deployment. Review networking, secrets, resource limits, replica counts, ingress, TLS, persistence, and observability for your environment.
+
+## Configuration
+
+The `search-gateway` can be configured using the following environment variables:
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `SEARCHBASE_PORT` | `8080` | The port the gateway listens on. |
+| `SEARCHBASE_CRAWL_WORKER_ADDRESS` | `http://localhost:8000` | The internal URL of the Python crawl worker. |
+| `SEARCHBASE_SEARCH_PROVIDER` | `searchbase_ddg` | The default search provider to use (`searchbase_ddg`, `ddgs`, or `searxng`). |
+| `SEARCHBASE_DDGS_PROVIDER_ADDRESS` | `http://localhost:8001` | Optional. The URL to the DDGS engine, if `ddgs` provider is used. |
+| `SEARCHBASE_SEARXNG_PROVIDER_ADDRESS` | *(empty)* | Optional. The URL to the SearXNG instance, if `searxng` provider is used (e.g. `http://localhost:8080`). |
+| `SEARCHBASE_ADDRESS` | *(empty)* | Optional. Used to override the base URL sent to MCP clients for SSE connections. **Reverse Proxy Note:** If deploying Searchbase behind a reverse proxy (like Traefik, Nginx, or Cloudflare Tunnels), leave this blank. The server will use relative paths, allowing the proxy to handle domain routing seamlessly. Set this only if you need to force a specific absolute URL. |
+| `SEARCHBASE_LOG_LEVEL` | `error` | Log level for structured logging (`debug`, `info`, `warn`, `error`). |
+| `SEARCHBASE_LOG_FORMAT` | `json` | Log format (`json` or `text`). |
+| `SEARCHBASE_TRACING_ENABLED` | `false` | Enable OpenTelemetry distributed tracing. (Experimental) |
+| `SEARCHBASE_TRACING_ENDPOINT` | *(empty)* | Endpoint for the tracing backend. (Experimental) |
+
+{{< hint warning >}}
+**Experimental Feature**
+OpenTelemetry tracing (`SEARCHBASE_TRACING_ENABLED` and `SEARCHBASE_TRACING_ENDPOINT`) is currently in development and not fully tested for production environments.
+{{< /hint >}}
+
+## Search Backend Options
+
+Searchbase initializes one search provider at startup through `SEARCHBASE_SEARCH_PROVIDER`.
+
+| Backend | Complexity | Best For | Notes |
+| :--- | :--- | :--- | :--- |
+| `searchbase_ddg` | Easiest | Simple self-hosting | Native Go scraper against DuckDuckGo HTML results. No extra service needed. |
+| `ddgs` | Moderate | Lightweight metasearch | Runs a small DDGS backend service and supports multiple engines. |
+| `searxng` | Advanced | Full private metasearch | Requires external SearXNG instance. JSON search output must be enabled. |
+
+## Native DuckDuckGo Backend
+
+`searchbase_ddg` is the default and easiest backend.
+
+```bash
+SEARCHBASE_SEARCH_PROVIDER=searchbase_ddg
+```
+
+This backend is implemented directly in the Go gateway. It posts to DuckDuckGo's HTML endpoint, parses organic results, and returns compact search metadata.
+
+Use this when you want the simplest possible self-hosted setup with no additional backend service.
+
+## DDGS Backend
+
+`ddgs` is a lightweight metasearch backend based on [`deedy5/ddgs`](https://github.com/deedy5/ddgs).
+
+```bash
+SEARCHBASE_SEARCH_PROVIDER=ddgs
+SEARCHBASE_DDGS_PROVIDER_ADDRESS=http://ddgs:8001
+```
+
+DDGS supports multiple search engines through a small Python service. It is a good middle ground when you want metasearch behavior without operating a full SearXNG instance.
+
+The `engine` request field applies when using this backend. Examples include `auto`, `google`, `duckduckgo`, `bing`, `brave`, and other DDGS-supported backends.
+
+## SearXNG Backend
+
+`searxng` connects Searchbase to an external SearXNG instance.
+
+```bash
+SEARCHBASE_SEARCH_PROVIDER=searxng
+SEARCHBASE_SEARXNG_PROVIDER_ADDRESS=http://searxng:8080
+```
+
+SearXNG is the most complete option if you want a full private metasearch engine with its own engine configuration, rate limits, proxy setup, and privacy controls.
+
+Refer to the official [SearXNG documentation](https://docs.searxng.org/) for details on how to host, configure, and operate a SearXNG instance.
+
+{{< hint warning >}}
+SearXNG must have JSON search output enabled. Searchbase calls `/search?format=json`, so instances that disable JSON responses will not work as a backend.
+{{< /hint >}}
+
+The `engine` request field applies when using this backend and maps to SearXNG's `engines` query parameter.
+
+## Choosing a Backend
+
+Start with `searchbase_ddg` if you only need a quick, low-maintenance deployment.
+
+Move to `ddgs` if you want lightweight metasearch without managing a full private search engine.
+
+Use `searxng` if you already run SearXNG or want full control over metasearch engines, privacy settings, and routing.
+
+## Production Notes
+
+Before exposing Searchbase publicly, plan for:
+
+- TLS and ingress configuration.
+- API authentication once available.
+- network isolation between public gateway and internal workers.
+- secrets management for any future paid provider credentials.
+- resource limits and worker scaling.
+- structured logs and optional tracing.
+- provider rate limits and acceptable use.

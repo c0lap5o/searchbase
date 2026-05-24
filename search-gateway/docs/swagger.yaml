@@ -1,0 +1,162 @@
+definitions:
+  api.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.FetchRequest:
+    properties:
+      js_render:
+        example: false
+        type: boolean
+      url:
+        example: https://example.com
+        type: string
+    required:
+    - url
+    type: object
+  api.FetchResponse:
+    properties:
+      markdown:
+        type: string
+      snippet:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+  search.Request:
+    properties:
+      engine:
+        example: auto
+        type: string
+      limit:
+        example: 3
+        type: integer
+      page:
+        example: 1
+        type: integer
+      provider:
+        description: 'TODO: this ignored right now, Add support for multiple search
+          providers'
+        example: auto
+        type: string
+      query:
+        example: who is the president
+        type: string
+      region:
+        example: wt-wt
+        type: string
+      safesearch:
+        example: moderate
+        type: string
+      timelimit:
+        example: d
+        type: string
+    required:
+    - query
+    type: object
+  search.Result:
+    properties:
+      snippet:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Bot Accessible Search Engine for web searching and URL fetching.
+  title: Searchbase Search Gateway API
+  version: "1.0"
+paths:
+  /api/v1/fetch:
+    post:
+      consumes:
+      - application/json
+      description: Use this tool ONLY when you already have a specific, exact URL
+        (http://...) that you want to extract and read. Do NOT pass search queries
+        into this tool.
+      operationId: fetchUrl
+      parameters:
+      - description: Fetch request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.FetchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.FetchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a website content
+      tags:
+      - fetchSingleUrl
+  /api/v1/healthz:
+    get:
+      consumes:
+      - text/plain
+      description: Checks the API server is running and responds with a 200 status.
+      operationId: healthCheck
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: API Health Check
+      tags:
+      - Health Check
+  /api/v1/search:
+    post:
+      consumes:
+      - application/json
+      description: Use this tool to search the internet for a general query. Do NOT
+        use this if you already have a specific URL.
+      operationId: webSearch
+      parameters:
+      - description: Search request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/search.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/search.Result'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Search the Web
+      tags:
+      - Search
+swagger: "2.0"

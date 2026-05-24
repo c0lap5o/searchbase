@@ -1,0 +1,47 @@
+# Demo-only Compose example using SearXNG as the search backend.
+# Not intended for production use.
+
+services:
+  search-gateway:
+    image: ghcr.io/coolapso/searchbase/search-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      SEARCHBASE_PORT: "8080"
+      SEARCHBASE_CRAWL_WORKER_ADDRESS: http://crawl-worker:8000
+      SEARCHBASE_SEARCH_PROVIDER: searxng
+      SEARCHBASE_SEARXNG_PROVIDER_ADDRESS: http://searxng:8080
+    depends_on:
+      - crawl-worker
+      - searxng
+
+  crawl-worker:
+    image: ghcr.io/coolapso/searchbase/crawl-worker:latest
+    ports:
+      - "8000:8000"
+
+  searxng:
+    image: docker.io/searxng/searxng:2026.5.17-d7e8b7cd1
+    ports:
+      - "8002:8080"
+    volumes:
+      - searxng-data:/var/cache/searxng/
+    configs:
+      - source: searxng_settings
+        target: /etc/searxng/settings.yml
+
+configs:
+  searxng_settings:
+    content: |
+      use_default_settings: true
+      server:
+        secret_key: "demo-only-change-me"
+        limiter: false
+        base_url: "http://localhost:8002"
+      search:
+        formats:
+          - html
+          - json
+
+volumes:
+  searxng-data:

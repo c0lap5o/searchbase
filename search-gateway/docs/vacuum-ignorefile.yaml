@@ -1,0 +1,6 @@
+description-duplication:
+    - $.paths['/api/v1/healthz'].get.responses['200'].description
+    - $.paths['/api/v1/healthz'].get.responses['400'].description
+    - $.paths['/api/v1/search'].post.responses['200'].description
+    - $.paths['/api/v1/search'].post.responses['400'].description
+    - $.paths['/api/v1/search'].post.responses['500'].description

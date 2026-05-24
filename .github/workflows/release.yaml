@@ -1,0 +1,266 @@
+name: Release
+
+on: 
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASE: ghcr.io/coolapso/searchbase
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.semrel.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Run go-semantic-release
+        uses: go-semantic-release/action@v1
+        id: semrel
+        with:
+          custom-arguments: '--commit-analyzer-opt patch_release_rules=fix,ref,build'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+  docker-gateway:
+    name: Build Gateway
+    needs: release
+    if: ${{ needs.release.outputs.version != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Generate Swagger docs
+        run: cd search-gateway && swag init -g cmd/server/main.go --parseDependency
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Gateway metadata
+        id: meta-gateway
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_BASE }}/search-gateway
+          tags: |
+            type=raw,value=latest
+            type=semver,pattern={{version}},value=v${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.release.outputs.version }}
+
+      - name: Build and push Search Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./search-gateway
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-gateway.outputs.tags }}
+          labels: ${{ steps.meta-gateway.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  docker-ddgs:
+    name: Build DDGS Service (${{ matrix.arch }})
+    needs: release
+    if: ${{ needs.release.outputs.version != '' }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract DDGS metadata
+        id: meta-ddgs
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_BASE }}/ddgs
+          flavor: |
+            suffix=-${{ matrix.arch }}
+          tags: |
+            type=raw,value=latest
+            type=semver,pattern={{version}},value=v${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.release.outputs.version }}
+
+      - name: Build and push DDGS Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ddgs
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.meta-ddgs.outputs.tags }}
+          labels: ${{ steps.meta-ddgs.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  docker-ddgs-manifest:
+    name: Create Multi-Arch Manifest for DDGS
+    needs: [release, docker-ddgs]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push manifests
+        run: |
+          IMAGE=${{ env.IMAGE_BASE }}/ddgs
+          VERSION=${{ needs.release.outputs.version }}
+          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
+          
+          TAGS=("latest" "${VERSION}" "${MAJOR_MINOR}")
+          
+          for TAG in "${TAGS[@]}"; do
+            echo "Creating manifest for $IMAGE:$TAG"
+            docker buildx imagetools create -t $IMAGE:$TAG \
+              $IMAGE:$TAG-amd64 \
+              $IMAGE:$TAG-arm64
+          done
+
+  docker-worker:
+    name: Build Worker (${{ matrix.arch }})
+    needs: release
+    if: ${{ needs.release.outputs.version != '' }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Worker metadata
+        id: meta-worker
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_BASE }}/crawl-worker
+          flavor: |
+            suffix=-${{ matrix.arch }}
+          tags: |
+            type=raw,value=latest
+            type=semver,pattern={{version}},value=v${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.release.outputs.version }}
+
+      - name: Build and push Crawl Worker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./crawl-worker
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.meta-worker.outputs.tags }}
+          labels: ${{ steps.meta-worker.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  docker-worker-manifest:
+    name: Create Multi-Arch Manifest for Worker
+    needs: [release, docker-worker]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push manifests
+        run: |
+          IMAGE=${{ env.IMAGE_BASE }}/crawl-worker
+          VERSION=${{ needs.release.outputs.version }}
+          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
+          
+          TAGS=("latest" "${VERSION}" "${MAJOR_MINOR}")
+          
+          for TAG in "${TAGS[@]}"; do
+            echo "Creating manifest for $IMAGE:$TAG"
+            docker buildx imagetools create -t $IMAGE:$TAG \
+              $IMAGE:$TAG-amd64 \
+              $IMAGE:$TAG-arm64
+          done

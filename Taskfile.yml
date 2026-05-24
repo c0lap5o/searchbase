@@ -1,0 +1,116 @@
+version: '3'
+
+vars:
+  NAME: "searchbase"
+  REPOSITORY: "github.com/coolapso/searchbase"
+  CONTAINER_REGISTRY: "ghcr.io/coolapso"
+  CI_INFISICAL_PROJECT_ID: "7897aa98-f8e5-40f2-a83d-f4926cdba05b"
+
+includes:
+  search-gateway:
+    taskfile: ./search-gateway/Taskfile.yml
+    dir: ./search-gateway
+  crawl-worker:
+    taskfile: ./crawl-worker/Taskfile.yml
+    dir: ./crawl-worker
+  ddgs:
+    taskfile: ./ddgs/Taskfile.yml
+    dir: ./ddgs
+
+tasks:
+  default:
+    desc: "List available tasks"
+    cmds:
+      - task --list
+
+  dev:up:
+    desc: "Start the local development environment (builds and runs containers without cache)"
+    cmds:
+      - docker compose up --build --force-recreate
+
+  dev:down:
+    desc: "Start the local development environment (builds and runs containers without cache)"
+    cmds:
+      - docker compose down
+
+  container:login:
+    desc: "Login to GHCR"
+    cmds:
+      - |
+        if [[ -z $GHCR_PASSWORD ]]; then
+           GHCR_PASSWORD=$(infisical secrets get --plain \
+             --domain="https://eu.infisical.com" \
+             --projectId {{.CI_INFISICAL_PROJECT_ID}} \
+             --env ci ghcr)
+        fi
+        echo $GHCR_PASSWORD | docker login ghcr.io -u coolapso --password-stdin
+
+  container:build:
+    desc: "Build the container image"
+    cmds:
+      - task: search-gateway:container:build
+      - task: crawl-worker:container:build
+      - task: ddgs:container:build
+
+  container:build:all:
+    desc: "Build the container image for all platforms"
+    cmds:
+      - task: search-gateway:container:build:all
+      - task: crawl-worker:container:build:all
+      - task: ddgs:container:build:all
+
+  container:push:
+    desc: "Push images to the registry"
+    cmds: 
+      - task: search-gateway:container:push
+      - task: crawl-worker:container:push
+      - task: ddgs:container:push
+    deps: [container:login]
+
+  release:gh:
+    desc: "Run go-semantic-release and output to .version file"
+    cmds:
+      - |
+        export REPOSITORY="{{.REPOSITORY}}"
+        export SLUG="${REPOSITORY#github.com/}"
+        git pull origin $(git branch --show-current) --rebase
+        git push origin $(git branch --show-current)
+        if [[ -z $GITHUB_TOKEN ]]; then
+          echo "GITHUB_TOKEN is not set, using gh cli"
+          export GITHUB_TOKEN=$(gh auth token)
+        fi
+        semantic-release --allow-no-changes \
+        --commit-analyzer-opt patch_release_rules=fix,ref,build \
+        --no-ci \
+        --provider-opt slug=$SLUG
+
+  docs:serve:
+    desc: "Run Hugo documentation server locally"
+    dir: ./docs
+    cmds:
+      - hugo server -D
+
+  docs:build:
+    desc: "Build the documentation site"
+    dir: ./docs
+    cmds:
+      - hugo --minify
+
+  docs:deploy:
+    desc: "Publish the documentation site to cloudflare pages"
+    dir: ./docs
+    cmds:
+      - wrangler pages deploy ./public --project-name=searchbasedocs
+    deps: [docs:build]
+
+  release:full:
+    desc: "Run whole release process"
+    cmds:
+      - task: search-gateway:test
+      - task: release:gh
+      - task: container:push
+
+  preRelease:
+    desc: "Run pre-release checks"
+    deps: [ search-gateway:test ] 
+

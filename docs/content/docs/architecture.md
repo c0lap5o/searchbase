@@ -1,0 +1,40 @@
+---
+title: "Architecture"
+weight: 40
+---
+
+Searchbase uses a hybrid microservice architecture built for horizontal scalability:
+
+1. **`search-gateway` (Go & Gin):** The front-facing orchestrator. It handles incoming REST and MCP requests, scrapes DuckDuckGo natively (HTML version) for top URLs, and acts as a router for optional search backends.
+2. **`crawl-worker` (Python & [Crawl4AI](https://github.com/unclecode/crawl4ai)):** The internal heavy-lifter. A headless browser that navigates to the URLs, executes JavaScript (if requested), bypasses anti-bot measures, and distills the DOM into pristine Markdown.
+3. **`ddgs` (Python) - *Optional*:** A lightweight internal microservice utilizing the [duckduckgo_search](https://github.com/deedy5/duckduckgo_search) package. It serves as an optional search backend to provide advanced metasearch capabilities and support for multiple underlying search engines.
+4. **`searxng` - *Optional*:** Support for connecting to an external SearXNG instance as a backend provider for metasearch capabilities.
+
+---
+
+## 🔒 Privacy-First Logging
+Searchbase is built from the ground up with privacy in mind. Its structured logging is designed to avoid user tracking and request correlation:
+
+*   **No IP Logging:** Raw IP addresses are never logged; only regional data (e.g., `CF-IPCountry`) is captured.
+*   **No Search Queries:** Search queries and fetched URLs are never logged.
+*   **Minimal Context:** Only essential request metadata (method, path, status code, latency) is recorded.
+*   **Configurable:** Set via `SEARCHBASE_LOG_LEVEL` and `SEARCHBASE_LOG_FORMAT` environment variables.
+
+## 📡 OpenTelemetry
+
+### Tracing
+
+{{< hint warning >}}
+**Experimental Feature**
+OpenTelemetry tracing support is not fully tested yet and is subject to change.
+{{< /hint >}}
+
+Distributed tracing support for observability and debugging.
+
+*   **Features:** Trace propagation via W3C TraceContext/Baggage, service name attribution.
+*   **Exporter:** OTLP HTTP exporter (compatible with Jaeger, OTEL Collector, etc.).
+*   **Configurable:** Set via `SEARCHBASE_TRACING_ENABLED` and `SEARCHBASE_TRACING_ENDPOINT`.
+
+### Metrics
+
+OpenTelemetry metrics are planned but not implemented yet.

@@ -1,0 +1,41 @@
+name: Go
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - "**"
+      - "!main"
+
+jobs:
+  test-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ">=1.22"
+      - name: Install Task
+        uses: go-task/setup-task@v2
+      - name: Install vacuum
+        run: |
+          curl -fsSL https://quobix.com/scripts/install_vacuum.sh | sh
+      - name: Check formatting
+        run: task search-gateway:test:fmt
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          only-new-issues: true
+          working-directory: search-gateway
+      - name: check if swagger docs are up to date
+        run: task search-gateway:test:docs
+      - name: lint swagger docs
+        run: task search-gateway:test:lint:swagger
+      - name: test gateway
+        run: task search-gateway:test:gateway
+      - name: test build
+        run: task search-gateway:build

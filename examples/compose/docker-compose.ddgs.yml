@@ -1,0 +1,26 @@
+# Demo-only Compose example using the lightweight DDGS metasearch backend.
+# Not intended for production use.
+
+services:
+  search-gateway:
+    image: ghcr.io/coolapso/searchbase/search-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      SEARCHBASE_PORT: "8080"
+      SEARCHBASE_CRAWL_WORKER_ADDRESS: http://crawl-worker:8000
+      SEARCHBASE_SEARCH_PROVIDER: ddgs
+      SEARCHBASE_DDGS_PROVIDER_ADDRESS: http://ddgs:8001
+    depends_on:
+      - crawl-worker
+      - ddgs
+
+  crawl-worker:
+    image: ghcr.io/coolapso/searchbase/crawl-worker:latest
+    ports:
+      - "8000:8000"
+
+  ddgs:
+    image: ghcr.io/coolapso/searchbase/ddgs:latest
+    ports:
+      - "8001:8001"

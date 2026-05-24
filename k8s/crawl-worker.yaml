@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crawl-worker
+  labels:
+    app: crawl-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crawl-worker
+  template:
+    metadata:
+      labels:
+        app: crawl-worker
+    spec:
+      containers:
+      - name: crawl-worker
+        image: ghcr.io/coolapso/searchbase/crawl-worker:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crawl-worker
+spec:
+  type: ClusterIP
+  selector:
+    app: crawl-worker
+  ports:
+  - port: 8000
+    targetPort: 8000

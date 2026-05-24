@@ -1,0 +1,18 @@
+baseURL = 'https://docs.searchbase.md/'
+locale = 'en-us'
+title = 'Searchbase Documentation'
+
+[params]
+  description = 'Self-hosted, privacy-focused search for AI agents and LLMs.'
+
+[outputs]
+  home = ['HTML', 'JSON']
+
+[markup]
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+    ordered = false
+  [markup.highlight]
+    style = "onedark"
+    lineNos = true

@@ -1,0 +1,41 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: ddgs
+#   labels:
+#     app: ddgs
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: ddgs
+#   template:
+#     metadata:
+#       labels:
+#         app: ddgs
+#     spec:
+#       containers:
+#       - name: ddgs
+#         image: ghcr.io/coolapso/searchbase/ddgs:latest
+#         imagePullPolicy: IfNotPresent
+#         ports:
+#         - containerPort: 8001
+#         resources:
+#           requests:
+#             memory: "128Mi"
+#             cpu: "100m"
+#           limits:
+#             memory: "512Mi"
+#             cpu: "500m"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: ddgs
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: ddgs
+#   ports:
+#   - port: 8001
+#     targetPort: 8001

@@ -1,0 +1,126 @@
+version: '3'
+
+vars:
+  NAME: "search-gateway"
+  CONTAINER_REGISTRY: "ghcr.io/coolapso/searchbase"
+  REPOSITORY: "github.com/coolapso/searchbase"
+
+tasks:
+  run:
+    desc: "Run the search gateway locally"
+    cmds:
+      - go run ./cmd/server/main.go
+    env:
+      SEARCHBASE_ENVIRONMENT: dev
+      SEARCHBASE_LOG_LEVEL: debug
+
+  run:ddgs:
+    desc: "Run the search gateway locally with ddgs provider"
+    cmds:
+      - go run ./cmd/server/main.go
+    env:
+      SEARCHBASE_SEARCH_PROVIDER: ddgs
+      SEARCHBASE_DDGS_PROVIDER_ADDRESS: http://localhost:8001
+
+  run:searxng:
+    desc: "Run the search gateway locally with searxng provider"
+    cmds:
+      - go run ./cmd/server/main.go
+    env:
+      SEARCHBASE_SEARCH_PROVIDER: searxng
+      SEARCHBASE_SEARXNG_PROVIDER_ADDRESS: http://localhost:8002
+
+
+  fmt:
+    desc: "Format search gateway code"
+    cmds:
+      - go fmt ./...
+
+  test:
+    desc: "run all tests"
+    cmds:
+      - task: test:docs
+      - task: test:fmt
+      - task: test:lint
+      - task: test:lint:swagger
+      - task: test:gateway
+      - task: build
+
+  test:dev:
+    desc: "run all tests, without docs check. Usefull for development, when tree might be dirty with new swagger spec"
+    cmds:
+      - task: test:fmt
+      - task: test:lint
+      - task: test:lint:swagger
+      - task: test:gateway
+      - task: build
+
+  test:gateway:
+    desc: "Run Go tests for the search-gateway"
+    cmds:
+      - go test -v ./...
+  
+  test:fmt:
+    desc: "test search gateway code formatting"
+    cmds:
+      - |
+        changed_files=$(go fmt ./...)
+        if [[ -n $changed_files ]]; then
+          echo "The following files are not formatted correctly:\n${changed_files}"
+          exit 1
+        fi
+
+  test:lint:
+    cmds:
+      - golangci-lint run ./...
+
+  test:lint:swagger:
+    desc: "Lint the generated Swagger spec"
+    cmds:
+      - vacuum lint --ignore-file docs/vacuum-ignorefile.yaml -d docs/swagger.json
+
+  test:docs:
+    desc: "Check if Swagger documentation is up to date"
+    cmds:
+      - task: docs:swagger
+      - git diff --exit-code --quiet docs/swagger.json
+
+  docs:swagger:
+    desc: "Generate Swagger OpenAPI documentation"
+    cmds:
+      - swag init -g cmd/server/main.go
+
+  build:
+    desc: "Build the search-gateway Go binary locally"
+    cmds:
+      - go build -o bin/server cmd/server/main.go
+
+  container:build:
+    desc: "Build the search-gateway container image"
+    cmds:
+      - docker buildx build -t {{.NAME}}:latest -f Containerfile .
+
+  container:build:amd64:
+    desc: "Build the container image for arm"
+    cmds:
+      - docker buildx build --platform linux/amd64 -t {{.NAME}}:latest -f Containerfile .
+
+  container:build:arm:
+    desc: "Build the container image for arm"
+    cmds:
+      - docker buildx build --platform linux/arm64 -t {{.NAME}}:latest -f Containerfile .
+
+  container:build:all:
+    desc: "Build the container image for arm"
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 -t {{.NAME}}:latest -f Containerfile .
+
+  container:push:
+    desc: "Push images to the registry"
+    cmds:
+      - |
+        git fetch --tags
+        version=$(git describe --tags --always --dirty="-dev")
+        name={{.CONTAINER_REGISTRY}}/{{.NAME}}
+        docker buildx build --push --platform linux/amd64,linux/arm64 -t ${name}:latest -t ${name}:${version#v} -f Containerfile .
+

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-gateway
+  labels:
+    app: search-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: search-gateway
+  template:
+    metadata:
+      labels:
+        app: search-gateway
+    spec:
+      containers:
+      - name: search-gateway
+        image: ghcr.io/coolapso/searchbase/search-gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SEARCHBASE_PORT
+          value: "8080"
+        - name: SEARCHBASE_CRAWL_WORKER_ADDRESS
+          value: "http://crawl-worker.default.svc.cluster.local:8000"
+        # - name: SEARCHBASE_DDGS_PROVIDER_ADDRESS
+        #   value: "http://ddgs.default.svc.cluster.local:8001"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-gateway
+spec:
+  type: ClusterIP
+  selector:
+    app: search-gateway
+  ports:
+  - port: 8080
+    targetPort: 8080
