@@ -2,11 +2,26 @@
 title: "Contributing"
 weight: 60
 ---
-# Contributing
 
 Contributions are welcome. Useful areas include new search providers, crawler improvements, API ergonomics, deployment examples, observability, and documentation.
 
 Please see `AGENTS.md` for internal system architecture and design decisions before making changes to endpoints, data contracts, deployment shape, or service boundaries.
+
+## Contributor License Agreement
+
+All contributors must accept the Searchbase Contributor License Agreement before a pull request can be merged.
+
+The CLA exists because Searchbase is an independent open-source project that may also be offered under commercial licenses. It lets the project remain open-source while preserving the ability to provide commercial licensing options.
+
+The CLA Assistant workflow checks pull requests automatically. If you have not signed yet, the bot will comment with instructions. Sign by commenting exactly:
+
+```text
+I have read the CLA Document and I hereby sign the CLA
+```
+
+Accepted signatures are stored on the `cla-signatures` branch under `.github/cla/signatures/v1/cla.json`.
+
+Read the full agreement in [`CLA.md`](https://github.com/coolapso/searchbase/blob/main/CLA.md).
 
 ## Development
 

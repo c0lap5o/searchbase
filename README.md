@@ -29,6 +29,7 @@ All documentation is available on the dedicated documentation site. Please visit
 - REST API Reference
 - Configuration & Architecture
 - Self-Hosting Instructions
+- Contributing and CLA information
 
 ---
 

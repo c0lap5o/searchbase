@@ -141,6 +141,9 @@ Compose files are demonstration-only examples for local testing and learning ser
 ### Documentation Site
 User-facing project documentation lives in the Hugo site under `docs/`. The site uses custom local layouts and styling, not an external theme. Keep it updated whenever setup, configuration, provider behavior, MCP usage, deployment notes, observability, or API behavior changes. Use `task docs:hugo` to preview locally and `hugo --destination /tmp/searchbase-docs-build` from `docs/` to verify builds without writing generated output into the repository.
 
+### Contributor License Agreement
+All external contributors must accept `CLA.md` before a pull request can be merged. `.github/workflows/cla.yaml` uses CLA Assistant Lite to require a signature comment and stores accepted signatures on the `cla-signatures` branch at `.github/cla/signatures/v1/cla.json`. Keep `CLA.md`, `CONTRIBUTING.md`, the PR template, the CLA workflow, and the docs Contributing page in sync if the contribution process changes.
+
 ### CI/CD Pipeline (GitHub Actions)
 The project utilizes GitHub Actions to automatically version, build, and publish Docker images to the GitHub Container Registry (GHCR) using `go-semantic-release`. **Taskfiles are used within these workflows to orchestrate the build and push processes.**
 *   **Trigger:** Pushes to the `main` branch or manual workflow dispatch.
