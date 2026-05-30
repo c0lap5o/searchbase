@@ -37,22 +37,12 @@ func (p *DuckDuckGoProvider) Search(ctx context.Context, sr Request) (Results, e
 	ctx, span := p.tracer.Start(ctx, "DuckDuckGoProvider.Search")
 	defer span.End()
 
-	searchURL := p.searchURL
-
-	reqBody := url.Values{}
-	reqBody.Set("q", sr.Query)
-	reqBody.Set("b", "")
-	reqBody.Set("kl", "")
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, searchURL, strings.NewReader(reqBody.Encode()))
+	req, err := p.newRequest(ctx, sr)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "failed to create request")
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		span.SetStatus(codes.Error, "failed to create new request")
+		return nil, err
 	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
 	resp, err := p.client.Do(req)
 	if err != nil {
@@ -116,4 +106,22 @@ func (p *DuckDuckGoProvider) Search(ctx context.Context, sr Request) (Results, e
 	span.SetAttributes(attribute.Int("search.results_count", len(results)))
 
 	return results, nil
+}
+
+func (p *DuckDuckGoProvider) newRequest(ctx context.Context, req Request) (*http.Request, error) {
+
+	reqBody := url.Values{}
+	reqBody.Set("q", req.Query)
+	reqBody.Set("b", "")
+	reqBody.Set("kl", "")
+
+	ddgRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, p.searchURL, strings.NewReader(reqBody.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	ddgRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	ddgRequest.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+	return ddgRequest, nil
 }
