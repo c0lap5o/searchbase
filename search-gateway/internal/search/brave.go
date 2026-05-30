@@ -128,11 +128,7 @@ func (b *BraveProvider) newRequest(ctx context.Context, req Request, searchUrl s
 	braveReq.Query = req.Query
 	braveReq.Country, braveReq.SearchLang = parseRegion(req.Region)
 
-	if req.Limit < 1 {
-		braveReq.Count = 5
-	} else {
-		braveReq.Count = min(req.Limit, 20)
-	}
+	braveReq.Count = min(req.Limit, 20)
 
 	if req.Page > 1 {
 		braveReq.Offset = min(req.Page-1, 9)
@@ -143,13 +139,13 @@ func (b *BraveProvider) newRequest(ctx context.Context, req Request, searchUrl s
 	}
 	if req.TimeLimit != "" {
 		switch strings.ToLower(req.TimeLimit) {
-		case "d", "day":
+		case "d":
 			braveReq.Freshness = "pd"
-		case "w", "week":
+		case "w":
 			braveReq.Freshness = "pw"
-		case "m", "month":
+		case "m":
 			braveReq.Freshness = "pm"
-		case "y", "year":
+		case "y":
 			braveReq.Freshness = "py"
 		default:
 			braveReq.Freshness = ""

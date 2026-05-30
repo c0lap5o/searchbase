@@ -80,7 +80,7 @@ func (p *DuckDuckGoProvider) Search(ctx context.Context, sr Request) (Results, e
 
 	// DDG HTML results are usually wrapped in `.result__snippet` and `.result__title`
 	doc.Find(".result__body").Each(func(i int, s *goquery.Selection) {
-		if len(results) >= sr.Limit {
+		if sr.Limit != 0 && len(results) >= sr.Limit {
 			return
 		}
 

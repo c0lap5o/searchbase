@@ -99,7 +99,6 @@ func (p *SearxngProvider) Search(ctx context.Context, req Request) (Results, err
 	}
 
 	searchUrl.RawQuery = q.Encode()
-
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, searchUrl.String(), nil)
 	if err != nil {
 		span.RecordError(err)
@@ -132,8 +131,10 @@ func (p *SearxngProvider) Search(ctx context.Context, req Request) (Results, err
 
 	var results Results
 	for i, r := range parsedResp.Results {
-		if i >= req.Limit {
-			break
+		if req.Limit != 0 {
+			if i >= req.Limit {
+				break
+			}
 		}
 		results = append(results, Result{
 			Title:   r.Title,

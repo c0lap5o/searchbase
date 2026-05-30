@@ -38,7 +38,7 @@ func NewServer(searchProvider search.SearchProvider, scraperClient *scraper.Scra
 	webSearchTool := mcp.NewTool("web_search",
 		mcp.WithDescription("Searches the live internet using various search engines and returns optimized markdown content from the top results. Useful for finding up-to-date information."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("The search query to look for")),
-		mcp.WithNumber("limit", mcp.Description("Number of search results to return (default 3, max 10)")),
+		mcp.WithNumber("limit", mcp.Description("Optional upper bound for returned search results. Omit or set to 0 to use the provider or search engine default.")),
 		mcp.WithString("engine", mcp.Description("The search engine to query (e.g., 'google', 'duckduckgo'). Defaults to 'auto' (all engines). Note: Only applies if the server uses the 'ddgs' or 'searxng' provider.")),
 		mcp.WithString("region", mcp.Description("The region to search in (e.g., 'wt-wt', 'us-en')")),
 		mcp.WithString("timelimit", mcp.Description("Time limit for the search ('d'=day, 'w'=week, 'm'=month, 'y'=year). Leave empty for no limit.")),
@@ -87,7 +87,7 @@ func (s *MCPServer) RegisterRoutes(r *gin.Engine, baseURL string) {
 }
 
 // HandleWebSearch handles the "web_search" tool execution.
-// It accepts a query, an optional limit, and an optional js_render flag.
+// It accepts a query and optional search filters.
 // It searches the internet and concurrently scrapes the top results,
 // returning an aggregated markdown string.
 func (s *MCPServer) HandleWebSearch(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -97,7 +97,7 @@ func (s *MCPServer) HandleWebSearch(ctx context.Context, request mcp.CallToolReq
 		return mcp.NewToolResultError("query is required"), nil
 	}
 
-	req.Limit = request.GetInt("limit", 3)
+	req.Limit = request.GetInt("limit", 0)
 	req.Engine = request.GetString("engine", "auto")
 	req.Region = request.GetString("region", "")
 	req.TimeLimit = request.GetString("timelimit", "")

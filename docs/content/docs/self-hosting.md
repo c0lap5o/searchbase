@@ -141,6 +141,8 @@ SEARCHBASE_BRAVE_API_TOKEN=your_brave_search_api_token
 
 This backend returns Brave web results as compact Searchbase results using each result's `title`, `url`, and `description`. Searchbase requests only web results from Brave and disables text decorations so snippets are easier for agents to consume.
 
+The `limit` request field maps to Brave's `count` parameter and is capped at Brave's maximum of 20. Omit `limit` or set it to `0` to use Brave's default result count.
+
 The `timelimit` request field maps to Brave freshness filters: `d` to `pd`, `w` to `pw`, `m` to `pm`, and `y` to `py`.
 
 The `region` request field can provide Brave country and language hints. Searchbase maps supported country-language style values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted. Brave also supports `ALL` as a country value.

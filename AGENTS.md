@@ -69,7 +69,6 @@ The internal heavy-lifter. Completely hidden from the outside world.
 ```json
 {
   "query": "kubernetes 1.30 release notes",
-  "limit": 5,
   "engine": "auto",
   "region": "wt-wt",
   "timelimit": "d",
@@ -107,7 +106,7 @@ The internal heavy-lifter. Completely hidden from the outside world.
 ```
 
 ### Go Gateway MCP Server Tools
-*   **`web_search`**: Searches the web using the configured gateway search provider and returns the top results. Takes `query`, `limit`, `engine` (requires `ddgs` or `searxng` provider), `region`, `timelimit`, `safesearch`, and `page` arguments. Brave maps supported country-language style `region` values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted.
+*   **`web_search`**: Searches the web using the configured gateway search provider and returns the top results. Takes `query`, optional `limit`, `engine` (requires `ddgs` or `searxng` provider), `region`, `timelimit`, `safesearch`, and `page` arguments. `limit` is an optional upper bound; omitted or `0` uses the provider or search engine default. Brave maps supported country-language style `region` values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted.
 *   **`fetch_url`**: Fetches the content of a single URL directly and extracts optimized markdown. Takes `url` and `js_render` arguments.
 
 ### Python Worker Internal API
