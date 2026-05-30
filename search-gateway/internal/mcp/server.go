@@ -39,8 +39,6 @@ func NewServer(searchProvider search.SearchProvider, scraperClient *scraper.Scra
 		mcp.WithDescription("Searches the live internet using various search engines and returns optimized markdown content from the top results. Useful for finding up-to-date information."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("The search query to look for")),
 		mcp.WithNumber("limit", mcp.Description("Number of search results to return (default 3, max 10)")),
-		//TODO: this ignored right now, Add support for multiple search providers
-		mcp.WithString("provider", mcp.Description("Ignored in this version. The search provider is configured at the server level.")),
 		mcp.WithString("engine", mcp.Description("The search engine to query (e.g., 'google', 'duckduckgo'). Defaults to 'auto' (all engines). Note: Only applies if the server uses the 'ddgs' or 'searxng' provider.")),
 		mcp.WithString("region", mcp.Description("The region to search in (e.g., 'wt-wt', 'us-en')")),
 		mcp.WithString("timelimit", mcp.Description("Time limit for the search ('d'=day, 'w'=week, 'm'=month, 'y'=year). Leave empty for no limit.")),
@@ -100,7 +98,6 @@ func (s *MCPServer) HandleWebSearch(ctx context.Context, request mcp.CallToolReq
 	}
 
 	req.Limit = request.GetInt("limit", 3)
-	req.Provider = request.GetString("provider", "auto")
 	req.Engine = request.GetString("engine", "auto")
 	req.Region = request.GetString("region", "")
 	req.TimeLimit = request.GetString("timelimit", "")

@@ -37,11 +37,6 @@ definitions:
       page:
         example: 1
         type: integer
-      provider:
-        description: 'TODO: this ignored right now, Add support for multiple search
-          providers'
-        example: auto
-        type: string
       query:
         example: who is the president
         type: string

@@ -15,7 +15,6 @@ You can also build your own scripts or use LangChain / LlamaIndex by hitting the
 {
   "query": "kubernetes 1.30 release notes",
   "limit": 5,
-  "provider": "auto",
   "engine": "auto",
   "region": "wt-wt",
   "timelimit": "d",
@@ -25,7 +24,6 @@ You can also build your own scripts or use LangChain / LlamaIndex by hitting the
 ```
 
 **Additional Optional Parameters:**
-- `provider`: Ignored in this version. The search provider is configured at the server level via environment variables.
 - `engine`: The search engine to query (e.g., `"auto"`, `"google"`, `"duckduckgo"`). Defaults to `"auto"` (searches all engines and deduplicates). **Note:** Only applies if the server is configured to use the `ddgs` or `searxng` provider.
 - `region`: Region or locale hint (e.g., `"wt-wt"`, `"us-en"`). Provider support differs. Brave maps supported country-language style values such as `"us-en"` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted.
 - `timelimit`: Time limit for the search (`"d"`=day, `"w"`=week, `"m"`=month, `"y"`=year). Leave empty for no limit.

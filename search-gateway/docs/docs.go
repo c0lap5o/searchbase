@@ -203,11 +203,6 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "provider": {
-                    "description": "TODO: this ignored right now, Add support for multiple search providers",
-                    "type": "string",
-                    "example": "auto"
-                },
                 "query": {
                     "type": "string",
                     "example": "who is the president"
