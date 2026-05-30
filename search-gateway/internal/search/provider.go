@@ -10,7 +10,7 @@ import (
 
 type Request struct {
 	Query string `json:"query" binding:"required" example:"who is the president" description:"The search query to look for"`
-	Limit int    `json:"limit" example:"3" description:"Number of search results to return (default 3, max 10)"`
+	Limit int    `json:"limit" example:"3" description:"Number of search results to return (default 5, max 20)"`
 	//TODO: this ignored right now, Add support for multiple search providers
 	Provider   string `json:"provider" example:"auto" description:"Ignored in this version. The search provider is configured at the server level."`
 	Engine     string `json:"engine" example:"auto" description:"The search engine to query (e.g., 'google', 'duckduckgo'). Defaults to 'auto' (all engines). Note: Only applies if the server uses the 'ddgs' or 'searxng' provider."`
@@ -37,8 +37,8 @@ type SearchProvider interface {
 func (r *Request) Normalize() {
 	if r.Limit <= 0 {
 		r.Limit = 5
-	} else if r.Limit > 10 {
-		r.Limit = 10
+	} else if r.Limit > 20 {
+		r.Limit = 20
 	}
 	if r.Provider == "" {
 		r.Provider = "auto"
@@ -74,7 +74,9 @@ func NewProvider(provider *settings.SearchProvider) (SearchProvider, error) {
 		return NewSearxngProvider(provider.Address()), nil
 	case "searchbase_ddg":
 		return NewDuckDuckGoProvider(), nil
+	case "brave":
+		return NewBraveProvider(provider.Token()), nil
 	}
 
-	return nil, fmt.Errorf("unsupported provider: %s", provider)
+	return nil, fmt.Errorf("unsupported provider: %s", provider.Name())
 }

@@ -40,12 +40,14 @@ func NewSettings() (*Settings, error) {
 
 	providerName := v.GetString("SEARCH_PROVIDER")
 	var providerAddress string
+	var token string
 	switch providerName {
 	case "ddgs":
 		providerAddress = v.GetString("DDGS_PROVIDER_ADDRESS")
 	case "searxng":
 		providerAddress = v.GetString("SEARXNG_PROVIDER_ADDRESS")
-
+	case "brave":
+		token = v.GetString("BRAVE_API_TOKEN")
 	}
 
 	s := &Settings{
@@ -57,6 +59,7 @@ func NewSettings() (*Settings, error) {
 		searchProvider: &SearchProvider{
 			name:    providerName,
 			address: providerAddress,
+			token:   token,
 		},
 		otel: &Otel{
 			tracing: &Tracing{

@@ -4,6 +4,8 @@ vars:
   NAME: "search-gateway"
   CONTAINER_REGISTRY: "ghcr.io/coolapso/searchbase"
   REPOSITORY: "github.com/coolapso/searchbase"
+  INFISICAL_PROJECT_ID: "4f12d18e-e075-4a6c-ba6c-367bec3e62e7"
+
 
 tasks:
   run:
@@ -29,6 +31,19 @@ tasks:
     env:
       SEARCHBASE_SEARCH_PROVIDER: searxng
       SEARCHBASE_SEARXNG_PROVIDER_ADDRESS: http://localhost:8002
+
+  run:brave:
+    desc: "Run the search gateway locally with brave provider"
+    cmds: 
+      - |
+        export SEARCHBASE_BRAVE_API_TOKEN=$(infisical secrets get --plain \
+          --domain="https://eu.infisical.com" \
+          --projectId {{.INFISICAL_PROJECT_ID}} \
+          --env prod brave)
+        go run ./cmd/server/main.go
+    env:
+      SEARCHBASE_SEARCH_PROVIDER: brave
+      SEARCHBASE_BRAVE_API_TOKEN: 
 
 
   fmt:

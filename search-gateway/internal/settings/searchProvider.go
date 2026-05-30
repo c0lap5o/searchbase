@@ -5,10 +5,12 @@ import "fmt"
 type SearchProvider struct {
 	name    string
 	address string
+	token   string
 }
 
 func (sp *SearchProvider) Name() string    { return sp.name }
 func (sp *SearchProvider) Address() string { return sp.address }
+func (sp *SearchProvider) Token() string   { return sp.token }
 func (sp *SearchProvider) validate() error {
 	switch sp.name {
 	case "ddgs":
@@ -22,6 +24,11 @@ func (sp *SearchProvider) validate() error {
 		}
 		return nil
 	case "searchbase_ddg":
+		return nil
+	case "brave":
+		if sp.token == "" {
+			return fmt.Errorf("provider API Token not set: searchbase provider brave requires SEARCHBASE_BRAVE_API_TOKEN")
+		}
 		return nil
 	}
 
