@@ -41,6 +41,11 @@ You can also build your own scripts or use LangChain / LlamaIndex by hitting the
 ]
 ```
 
+**Errors:**
+- `400`: Invalid request payload or missing `query`.
+- `502`: Configured search provider request failed, returned a non-success status, or returned an invalid response. Provider errors are safe public messages that do not include search queries, request bodies, tokens, or raw upstream URLs.
+- `500`: Unexpected gateway failure.
+
 ## Fetch URL
 **Endpoint:** `POST /api/v1/fetch`
 

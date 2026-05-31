@@ -86,30 +86,35 @@ func (b *BraveProvider) Search(ctx context.Context, req Request) (Results, error
 
 	request, err := b.newRequest(ctx, req, b.webSearchURL)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("failed to create brave search request")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to create request")
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, errMsg
 	}
 
 	httpResp, err := b.client.Do(request)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("brave search provider request failed")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to execute request")
-		return nil, fmt.Errorf("HTTP request failed: %w", err)
+		return nil, errMsg
 	}
 	//nolint:errcheck
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode != http.StatusOK {
+		errMsg := fmt.Errorf("brave search provider returned status %d", httpResp.StatusCode)
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, fmt.Sprintf("unexpected status code: %d", httpResp.StatusCode))
-		return nil, fmt.Errorf("brave API returned status %d", httpResp.StatusCode)
+		return nil, errMsg
 	}
 
 	var resp braveResponse
 	if err := json.NewDecoder(httpResp.Body).Decode(&resp); err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("brave search provider returned an invalid response")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to decode response")
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return nil, errMsg
 	}
 
 	results := make([]Result, 0, len(resp.Web.Results))

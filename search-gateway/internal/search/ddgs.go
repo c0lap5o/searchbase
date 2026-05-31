@@ -62,33 +62,36 @@ func (p *DDGSProvider) Search(ctx context.Context, req Request) (Results, error)
 
 	httpReq, err := p.newRequest(ctx, req)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("failed to create ddgs search request")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to create new request")
-		return nil, fmt.Errorf("failed to create ddgs request: %w", err)
+		return nil, errMsg
 	}
 
 	resp, err := p.client.Do(httpReq)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("ddgs search provider request failed")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "http request failed")
-		return nil, fmt.Errorf("failed to execute ddgs request: %w", err)
+		return nil, errMsg
 	}
 	//nolint:errcheck
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected status code from provider: %d", resp.StatusCode)
-		span.RecordError(err)
+		errMsg := fmt.Errorf("ddgs search provider returned status %d", resp.StatusCode)
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "non-200 response")
 
-		return nil, err
+		return nil, errMsg
 	}
 
 	var ddgsResults ddgsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&ddgsResults); err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("ddgs search provider returned an invalid response")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to decode response")
-		return nil, fmt.Errorf("failed to decode provider response: %w", err)
+		return nil, errMsg
 	}
 
 	results := make(Results, len(ddgsResults.Results))

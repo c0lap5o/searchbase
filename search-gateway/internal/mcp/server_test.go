@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -15,9 +16,15 @@ import (
 )
 
 // MockSearchProvider implements search.SearchProvider for testing
-type MockSearchProvider struct{}
+type MockSearchProvider struct {
+	Err error
+}
 
 func (m *MockSearchProvider) Search(ctx context.Context, req search.Request) (search.Results, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+
 	return search.Results{
 		{
 			Title:   "Test Title",
@@ -25,6 +32,38 @@ func (m *MockSearchProvider) Search(ctx context.Context, req search.Request) (se
 			Snippet: "Test snippet",
 		},
 	}, nil
+}
+
+func TestHandleWebSearchProviderError(t *testing.T) {
+	scraperClient := scraper.NewScraperClient("http://example.com")
+	srv := NewServer(&MockSearchProvider{Err: errors.New("ddgs search provider request failed")}, scraperClient, slog.Default())
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Name: "web_search",
+			Arguments: map[string]any{
+				"query": "secret private query",
+			},
+		},
+	}
+
+	res, err := srv.HandleWebSearch(context.Background(), req)
+	if err == nil {
+		t.Fatalf("Expected returned provider error, got nil")
+	}
+
+	if !res.IsError {
+		t.Fatalf("Expected tool error")
+	}
+
+	textContent := res.Content[0].(mcp.TextContent).Text
+	if !strings.Contains(textContent, "Search failed: ddgs search provider request failed") {
+		t.Fatalf("Expected provider error in response, got %s", textContent)
+	}
+
+	if strings.Contains(textContent, "secret private query") {
+		t.Fatalf("Response leaked query: %s", textContent)
+	}
 }
 
 func TestHandleWebSearch(t *testing.T) {

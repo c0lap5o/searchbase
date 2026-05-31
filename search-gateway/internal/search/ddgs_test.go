@@ -57,3 +57,20 @@ func TestDDGSProvider_Search(t *testing.T) {
 		t.Errorf("expected snippet 'test search result', got '%s'", results[0].Snippet)
 	}
 }
+
+func TestDDGSProvider_Search_ErrorResponse(t *testing.T) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer mockServer.Close()
+
+	provider := NewDDGSProvider(mockServer.URL)
+	_, err := provider.Search(context.Background(), Request{Query: "test"})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if err.Error() != "ddgs search provider returned status 502" {
+		t.Fatalf("expected safe provider error, got %v", err)
+	}
+}

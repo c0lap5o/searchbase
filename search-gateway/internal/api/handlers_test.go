@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -15,9 +16,15 @@ import (
 )
 
 // MockSearchProvider implements search.SearchProvider for testing
-type MockSearchProvider struct{}
+type MockSearchProvider struct {
+	Err error
+}
 
 func (m *MockSearchProvider) Search(ctx context.Context, req search.Request) (search.Results, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+
 	return search.Results{
 		{
 			Title:   "Test Result",
@@ -25,6 +32,40 @@ func (m *MockSearchProvider) Search(ctx context.Context, req search.Request) (se
 			Snippet: "Test snippet",
 		},
 	}, nil
+}
+
+func TestHandleSearchProviderError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	scraperClient := scraper.NewScraperClient("http://example.com")
+	apiServer := NewAPIServer(&MockSearchProvider{Err: errors.New("searxng search provider request failed")}, scraperClient, slog.Default())
+
+	router := gin.New()
+	apiServer.RegisterRoutes(router.Group("/api/v1"))
+
+	bodyBytes, _ := json.Marshal(search.Request{Query: "secret private query"})
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/search", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadGateway {
+		t.Fatalf("Expected status code 502, got %d", w.Code)
+	}
+
+	var resp ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	if resp.Error != "searxng search provider request failed" {
+		t.Fatalf("Expected provider error message, got %s", resp.Error)
+	}
+
+	if bytes.Contains(w.Body.Bytes(), []byte("secret private query")) {
+		t.Fatalf("Response leaked query: %s", w.Body.String())
+	}
 }
 
 func TestHandleSearch(t *testing.T) {

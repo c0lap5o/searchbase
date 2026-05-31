@@ -87,6 +87,7 @@ func (s *APIServer) HandleHealth(c *gin.Context) {
 // @Param request body search.Request true "Search request payload"
 // @Success 200 {object} search.Results
 // @Failure 400 {object} ErrorResponse
+// @Failure 502 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
 // @Router /api/v1/search [post]
 func (s *APIServer) HandleSearch(c *gin.Context) {
@@ -106,7 +107,7 @@ func (s *APIServer) HandleSearch(c *gin.Context) {
 	results, err := s.SearchProvider.Search(c.Request.Context(), req)
 	if err != nil {
 		s.logger.Error("search provider error", "error", err)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "search provider failed"})
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: err.Error()})
 		return
 	}
 

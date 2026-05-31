@@ -86,6 +86,7 @@ The internal heavy-lifter. Completely hidden from the outside world.
   }
 ]
 ```
+**Errors:** `400` for invalid request payload or missing `query`; `502` for upstream provider failures with safe provider-specific messages that do not include search queries, request bodies, tokens, or raw upstream URLs; `500` for unexpected gateway failures.
 
 **Endpoint:** `POST /api/v1/fetch`
 **Request:**
@@ -106,7 +107,7 @@ The internal heavy-lifter. Completely hidden from the outside world.
 ```
 
 ### Go Gateway MCP Server Tools
-*   **`web_search`**: Searches the web using the configured gateway search provider and returns the top results. Takes `query`, optional `limit`, `engine` (requires `ddgs` or `searxng` provider), `region`, `timelimit`, `safesearch`, and `page` arguments. `limit` is an optional upper bound; omitted or `0` uses the provider or search engine default. Brave maps supported country-language style `region` values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted.
+*   **`web_search`**: Searches the web using the configured gateway search provider and returns the top results. Takes `query`, optional `limit`, `engine` (requires `ddgs` or `searxng` provider), `region`, `timelimit`, `safesearch`, and `page` arguments. `limit` is an optional upper bound; omitted or `0` uses the provider or search engine default. Brave maps supported country-language style `region` values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted. Provider failures are returned as safe provider-specific messages without exposing search queries, request bodies, tokens, or raw upstream URLs.
 *   **`fetch_url`**: Fetches the content of a single URL directly and extracts optimized markdown. Takes `url` and `js_render` arguments.
 
 ### Python Worker Internal API

@@ -60,32 +60,35 @@ func (p *SearxngProvider) Search(ctx context.Context, req Request) (Results, err
 
 	sr, err := p.newRequest(ctx, req)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("failed to create searxng search request")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to create request")
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, errMsg
 	}
 
 	resp, err := p.client.Do(sr)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("searxng search provider request failed")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "http request failed")
-		return nil, fmt.Errorf("failed to execute searxng request: %w", err)
+		return nil, errMsg
 	}
 	//nolint:errcheck
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected status code from provider: %d", resp.StatusCode)
-		span.RecordError(err)
+		errMsg := fmt.Errorf("searxng search provider returned status %d", resp.StatusCode)
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "non-200 response")
-		return nil, err
+		return nil, errMsg
 	}
 
 	var parsedResp searxngResponse
 	if err := json.NewDecoder(resp.Body).Decode(&parsedResp); err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("searxng search provider returned an invalid response")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to decode response")
-		return nil, fmt.Errorf("failed to decode provider response: %w", err)
+		return nil, errMsg
 	}
 
 	var results Results

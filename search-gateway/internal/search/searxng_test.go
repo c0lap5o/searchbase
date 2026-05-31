@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +79,29 @@ func TestSearxngProvider_Search_ErrorResponse(t *testing.T) {
 	_, err := provider.Search(context.Background(), req)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
+	}
+
+	if err.Error() != "searxng search provider returned status 500" {
+		t.Fatalf("Expected safe provider error, got %v", err)
+	}
+}
+
+func TestSearxngProvider_Search_NetworkErrorDoesNotLeakQuery(t *testing.T) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	provider := NewSearxngProvider(mockServer.URL)
+	mockServer.Close()
+
+	_, err := provider.Search(context.Background(), Request{Query: "secret private query"})
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	if err.Error() != "searxng search provider request failed" {
+		t.Fatalf("Expected safe network error, got %v", err)
+	}
+
+	if strings.Contains(err.Error(), "secret private query") {
+		t.Fatalf("Error leaked query: %v", err)
 	}
 }
 

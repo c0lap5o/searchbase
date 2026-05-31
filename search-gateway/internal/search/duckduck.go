@@ -40,31 +40,35 @@ func (p *DuckDuckGoProvider) Search(ctx context.Context, sr Request) (Results, e
 
 	req, err := p.newRequest(ctx, sr)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("failed to create searchbase_ddg search request")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to create new request")
-		return nil, err
+		return nil, errMsg
 	}
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("searchbase_ddg search provider request failed")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "search request failed")
-		return nil, fmt.Errorf("search request failed: %w", err)
+		return nil, errMsg
 	}
 	//nolint:errcheck
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("searchbase_ddg search provider returned status %d", resp.StatusCode)
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "non-200 response")
-		return nil, fmt.Errorf("unexpected status code from search provider: %d", resp.StatusCode)
+		return nil, errMsg
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		span.RecordError(err)
+		errMsg := fmt.Errorf("searchbase_ddg search provider returned an invalid response")
+		span.RecordError(errMsg)
 		span.SetStatus(codes.Error, "failed to parse search results")
-		return nil, fmt.Errorf("failed to parse search results: %w", err)
+		return nil, errMsg
 	}
 
 	var results Results

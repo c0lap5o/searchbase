@@ -94,6 +94,10 @@ func TestBraveProvider_Search(t *testing.T) {
 		if err == nil {
 			t.Fatalf("expected error, got nil")
 		}
+
+		if err.Error() != "failed to create brave search request" {
+			t.Fatalf("expected safe request error, got %v", err)
+		}
 	})
 }
 
