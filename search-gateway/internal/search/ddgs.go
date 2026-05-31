@@ -56,32 +56,12 @@ func (p *DDGSProvider) Search(ctx context.Context, req Request) (Results, error)
 		attribute.String("search.provider", "ddgs"),
 	)
 
-	searchUrl := fmt.Sprintf("%s/search/text", p.address)
-
-	ddgsReq := ddgsSearchRequest{
-		Query:      req.Query,
-		Region:     req.Region,
-		Safesearch: req.SafeSearch,
-		TimeLimit:  req.TimeLimit,
-		MaxResults: req.Limit,
-		Page:       req.Page,
-		Backend:    req.Engine,
-	}
-
-	jsonReq, err := json.Marshal(ddgsReq)
+	httpReq, err := p.newRequest(ctx, req)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "failed to marshal request")
-		return nil, fmt.Errorf("failed to marshal DDGS request: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, searchUrl, bytes.NewBuffer(jsonReq))
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "failed to create http request")
+		span.SetStatus(codes.Error, "failed to create new request")
 		return nil, fmt.Errorf("failed to create ddgs request: %w", err)
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
 
 	resp, err := p.client.Do(httpReq)
 	if err != nil {
@@ -117,4 +97,32 @@ func (p *DDGSProvider) Search(ctx context.Context, req Request) (Results, error)
 	}
 
 	return results, nil
+}
+
+func (p *DDGSProvider) newRequest(ctx context.Context, req Request) (*http.Request, error) {
+	searchUrl := fmt.Sprintf("%s/search/text", p.address)
+
+	r := ddgsSearchRequest{
+		Query:      req.Query,
+		Region:     req.Region,
+		Safesearch: req.SafeSearch,
+		TimeLimit:  req.TimeLimit,
+		MaxResults: req.Limit,
+		Page:       req.Page,
+		Backend:    req.Engine,
+	}
+
+	jsonReq, err := json.Marshal(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	ddgsRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, searchUrl, bytes.NewBuffer(jsonReq))
+	if err != nil {
+		return nil, err
+	}
+
+	ddgsRequest.Header.Set("Content-Type", "application/json")
+
+	return ddgsRequest, nil
 }
