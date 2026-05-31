@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -72,5 +73,58 @@ func TestNewSettings_EnvVars(t *testing.T) {
 
 	if s.SearchProvider().Address() != "http://ddgs-service:8002" {
 		t.Errorf("Expected ddgs address http://ddgs-service:8002, got %s", s.SearchProvider().Address())
+	}
+}
+
+func TestNewSettings_SearchProviderValidationErrors(t *testing.T) {
+	tests := []struct {
+		name          string
+		provider      string
+		expectedError string
+	}{
+		{
+			name:          "ddgs missing address",
+			provider:      "ddgs",
+			expectedError: "provider address not set: searchbase provider ddgs requires SEARCHBASE_DDGS_PROVIDER_ADDRESS",
+		},
+		{
+			name:          "searxng missing address",
+			provider:      "searxng",
+			expectedError: "provider address not set: searchbase provider searxng requires SEARCHBASE_SEARXNG_PROVIDER_ADDRESS",
+		},
+		{
+			name:          "brave missing token",
+			provider:      "brave",
+			expectedError: "provider API Token not set: searchbase provider brave requires SEARCHBASE_BRAVE_API_TOKEN",
+		},
+		{
+			name:          "mojeek missing token",
+			provider:      "mojeek",
+			expectedError: "provider API Token not set: searchbase provider mojeek requires SEARCHBASE_MOJEEK_API_KEY",
+		},
+		{
+			name:          "unsupported provider",
+			provider:      "unknown",
+			expectedError: "unsupported search provider: unknown",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("SEARCHBASE_SEARCH_PROVIDER", tt.provider)
+
+			_, err := NewSettings()
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+
+			if err.Error() != tt.expectedError {
+				t.Fatalf("Expected error %q, got %q", tt.expectedError, err.Error())
+			}
+
+			if strings.Contains(err.Error(), "SEARCHBASE_") && strings.HasSuffix(err.Error(), "SEARCHBASE_") {
+				t.Fatalf("Error has incomplete environment variable name: %v", err)
+			}
+		})
 	}
 }

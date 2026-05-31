@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,19 @@ type Settings struct {
 	address            string
 	logLevel           string
 	otel               *Otel
+}
+
+type providerSpec struct {
+	addressEnv string
+	tokenEnv   string
+}
+
+var providerSpecs = map[string]providerSpec{
+	"searchbase_ddg": {},
+	"ddgs":           {addressEnv: "DDGS_PROVIDER_ADDRESS"},
+	"searxng":        {addressEnv: "SEARXNG_PROVIDER_ADDRESS"},
+	"brave":          {tokenEnv: "BRAVE_API_TOKEN"},
+	"mojeek":         {tokenEnv: "MOJEEK_API_KEY"},
 }
 
 func (s *Settings) Port() string                    { return s.port }
@@ -40,17 +54,24 @@ func NewSettings() (*Settings, error) {
 	v.SetDefault("ENVIRONMENT", "production")
 
 	providerName := v.GetString("SEARCH_PROVIDER")
+	if _, ok := providerSpecs[providerName]; !ok {
+		return nil, fmt.Errorf("unsupported search provider: %s", providerName)
+	}
+
 	var providerAddress string
 	var token string
-	switch providerName {
-	case "ddgs":
-		providerAddress = v.GetString("DDGS_PROVIDER_ADDRESS")
-	case "searxng":
-		providerAddress = v.GetString("SEARXNG_PROVIDER_ADDRESS")
-	case "brave":
-		token = v.GetString("BRAVE_API_TOKEN")
-	case "mojeek":
-		token = v.GetString("MOJEEK_API_KEY")
+	if providerSpecs[providerName].addressEnv != "" {
+		providerAddress = v.GetString(providerSpecs[providerName].addressEnv)
+		if providerAddress == "" {
+			return nil, fmt.Errorf("provider address not set: searchbase provider %s requires SEARCHBASE_%s", providerName, providerSpecs[providerName].addressEnv)
+		}
+	}
+
+	if providerSpecs[providerName].tokenEnv != "" {
+		token = v.GetString(providerSpecs[providerName].tokenEnv)
+		if token == "" {
+			return nil, fmt.Errorf("provider API Token not set: searchbase provider %s requires SEARCHBASE_%s", providerName, providerSpecs[providerName].tokenEnv)
+		}
 	}
 
 	s := &Settings{
@@ -74,10 +95,6 @@ func NewSettings() (*Settings, error) {
 
 	if strings.ToLower(v.GetString("ENVIRONMENT")) == "dev" {
 		s.ginMode = gin.DebugMode
-	}
-
-	if err := s.searchProvider.validate(); err != nil {
-		return nil, err
 	}
 
 	if err := s.otel.tracing.validate(); err != nil {
