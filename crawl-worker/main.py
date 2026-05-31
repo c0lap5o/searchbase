@@ -29,6 +29,8 @@ LOG_FORMAT = os.environ.get("CRAWLER_LOG_FORMAT", "json").lower()
 
 
 class JSONFOrmatter(logging.Formatter):
+    """Format log records as compact JSON for structured logging backends."""
+
     def format(self, record):
         log_record = {
             "time": self.formatTime(record, self.datefmt),
@@ -42,6 +44,8 @@ class JSONFOrmatter(logging.Formatter):
 
 
 class TextFormatter(logging.Formatter):
+    """Format log records as key-value text for local debugging."""
+
     def format(self, record):
         log_str = f'time={self.formatTime(record, self.datefmt)} level={record.levelname} msg="{record.getMessage()}"'
         if hasattr(record, "attrs"):
@@ -51,11 +55,15 @@ class TextFormatter(logging.Formatter):
 
 
 class ExtractRequest(BaseModel):
+    """Internal request body for extracting one URL."""
+
     url: str
     js_render: bool = False
 
 
 class ExtractResponse(BaseModel):
+    """Internal response body returned after extraction."""
+
     markdown: str
     success: bool
     error: str = ""
@@ -82,6 +90,8 @@ if OTEL_TRACING == "true":
 
 @app.middleware("http")
 async def slogger_middleware(request: Request, call_next):
+    """Log request metadata without raw IPs or user-identifying headers."""
+
     start = time.time()
     status_code = 500
 
@@ -122,6 +132,8 @@ async def slogger_middleware(request: Request, call_next):
 
 @app.post("/extract", response_model=ExtractResponse)
 async def extract_content(req: ExtractRequest):
+    """Fetch a URL with crawl4ai and return LLM-friendly Markdown."""
+
     span = trace.get_current_span()
     try:
         browser_config = BrowserConfig(verbose=False)

@@ -15,11 +15,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// FetchRequest is the public REST payload for extracting one known URL.
 type FetchRequest struct {
 	URL      string `json:"url" binding:"required" example:"https://example.com" description:"The exact URL of the webpage to fetch"`
 	JSRender bool   `json:"js_render" example:"false" description:"Whether to use a headless browser to execute JavaScript"`
 }
 
+// FetchResponse is the public REST response returned after URL extraction.
 type FetchResponse struct {
 	Title    string `json:"title"`
 	URL      string `json:"url"`
@@ -27,16 +29,19 @@ type FetchResponse struct {
 	Markdown string `json:"markdown,omitempty"`
 }
 
+// ErrorResponse is the common JSON error shape returned by REST handlers.
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
+// APIServer owns REST handlers and their shared dependencies.
 type APIServer struct {
 	SearchProvider search.SearchProvider
 	ScraperClient  *scraper.ScraperClient
 	logger         *slog.Logger
 }
 
+// NewAPIServer wires REST handlers to the configured search provider and worker client.
 func NewAPIServer(provider search.SearchProvider, scraperClient *scraper.ScraperClient, logger *slog.Logger) *APIServer {
 	return &APIServer{
 		SearchProvider: provider,
@@ -45,12 +50,14 @@ func NewAPIServer(provider search.SearchProvider, scraperClient *scraper.Scraper
 	}
 }
 
+// RegisterRoutes mounts the versioned REST API routes.
 func (s *APIServer) RegisterRoutes(r *gin.RouterGroup) {
 	r.POST("/search", s.HandleSearch)
 	r.POST("/fetch", s.HandleFetch)
 	r.GET("/healthz", s.HandleHealth)
 }
 
+// RegisterSwaggerRoutes exposes the generated Swagger UI.
 func (s *APIServer) RegisterSwaggerRoutes(r *gin.Engine) {
 	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/docs", func(c *gin.Context) {

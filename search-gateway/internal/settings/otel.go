@@ -2,10 +2,12 @@ package settings
 
 import "fmt"
 
+// Otel groups OpenTelemetry-related settings.
 type Otel struct {
 	tracing *Tracing
 }
 
+// Tracing stores OTLP tracing configuration.
 type Tracing struct {
 	enabled  bool
 	endpoint string

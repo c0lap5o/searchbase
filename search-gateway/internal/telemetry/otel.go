@@ -12,6 +12,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
+// InitTracer configures global OpenTelemetry tracing with an OTLP/HTTP exporter.
 func InitTracer(serviceName, endpoint string) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 	exporter, err := otlptracehttp.New(ctx,

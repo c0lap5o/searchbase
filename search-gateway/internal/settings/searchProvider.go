@@ -2,6 +2,7 @@ package settings
 
 import "fmt"
 
+// SearchProvider stores startup configuration for the selected search backend.
 type SearchProvider struct {
 	name    string
 	address string

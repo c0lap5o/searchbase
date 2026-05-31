@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Settings contains all gateway configuration after environment parsing and validation.
 type Settings struct {
 	port               string
 	crawlWorkerAddress string
@@ -25,8 +26,8 @@ func (s *Settings) Address() string                 { return s.address }
 func (s *Settings) LogLevel() string                { return s.logLevel }
 func (s *Settings) Otel() *Otel                     { return s.otel }
 
-// NewSettings initializes a new Settings instance with default values from the environment
-// searchbase address, should be left empty if running behind a reverse proxy for routing to use relative paths
+// NewSettings loads SEARCHBASE_* environment variables, applies defaults, and
+// validates provider and tracing configuration.
 func NewSettings() (*Settings, error) {
 	v := viper.New()
 	v.SetEnvPrefix("SEARCHBASE")

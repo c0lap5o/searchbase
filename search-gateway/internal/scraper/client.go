@@ -13,23 +13,27 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// ScraperClient calls the internal crawl-worker service.
 type ScraperClient struct {
 	BaseURL    string
 	HTTPClient *http.Client
 	tracer     trace.Tracer
 }
 
+// ExtractRequest is the internal payload sent to crawl-worker /extract.
 type ExtractRequest struct {
 	URL      string `json:"url"`
 	JSRender bool   `json:"js_render"`
 }
 
+// ExtractResponse is the internal response returned by crawl-worker /extract.
 type ExtractResponse struct {
 	Markdown string `json:"markdown"`
 	Success  bool   `json:"success"`
 	Error    string `json:"error"`
 }
 
+// NewScraperClient creates a worker client with OpenTelemetry HTTP transport.
 func NewScraperClient(baseURL string) *ScraperClient {
 	return &ScraperClient{
 		BaseURL: baseURL,
@@ -40,6 +44,7 @@ func NewScraperClient(baseURL string) *ScraperClient {
 	}
 }
 
+// Extract asks crawl-worker to fetch a URL and return optimized Markdown.
 func (c *ScraperClient) Extract(ctx context.Context, url string, jsRender bool) (string, error) {
 	ctx, span := c.tracer.Start(ctx, "ScraperClient.Extract")
 	defer span.End()

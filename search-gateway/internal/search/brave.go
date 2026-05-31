@@ -28,6 +28,7 @@ type braveRequest struct {
 	ExtraSnippets   bool     `json:"extra_snippets"`
 }
 
+// BraveProvider calls the official Brave Search API directly from the gateway.
 type BraveProvider struct {
 	client       *http.Client
 	address      string
@@ -60,6 +61,7 @@ var (
 	braveLangs = []string{"ar", "eu", "bn", "bg", "ca", "zh-hans", "zh-hant", "hr", "cs", "da", "nl", "en", "en-gb", "et", "fi", "fr", "gl", "de", "el", "gu", "he", "hi", "hu", "is", "it", "jp", "kn", "ko", "lv", "lt", "ms", "ml", "mr", "nb", "pl", "pt-br", "pt-pt", "pa", "ro", "ru", "sr", "sk", "sl", "es", "sv", "ta", "te", "th", "tr", "uk", "vi"}
 )
 
+// NewBraveProvider creates a Brave Search API provider with the subscription token.
 func NewBraveProvider(token string) *BraveProvider {
 	return &BraveProvider{
 		client: &http.Client{
@@ -72,6 +74,8 @@ func NewBraveProvider(token string) *BraveProvider {
 	}
 }
 
+// Search executes a Brave web search and maps web results into the gateway's
+// compact Result shape.
 func (b *BraveProvider) Search(ctx context.Context, req Request) (Results, error) {
 	ctx, span := b.tracer.Start(ctx, "BraveProvider.Search")
 	defer span.End()
@@ -128,6 +132,8 @@ func (b *BraveProvider) newRequest(ctx context.Context, req Request, searchUrl s
 	braveReq.Query = req.Query
 	braveReq.Country, braveReq.SearchLang = parseRegion(req.Region)
 
+	// Brave caps count at 20. A zero limit is omitted by JSON encoding so Brave
+	// can use its default result count.
 	braveReq.Count = min(req.Limit, 20)
 
 	if req.Page > 1 {

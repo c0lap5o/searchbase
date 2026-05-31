@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// DDGSProvider sends search requests to the internal DDGS microservice.
 type DDGSProvider struct {
 	client  *http.Client
 	address string
@@ -39,6 +40,7 @@ type ddgsResponse struct {
 	Results []ddgsResult `json:"results"`
 }
 
+// NewDDGSProvider creates a DDGS provider that targets the given service address.
 func NewDDGSProvider(address string) *DDGSProvider {
 	return &DDGSProvider{
 		// TODO: Add any custom proxy/timeout configs here later
@@ -48,6 +50,8 @@ func NewDDGSProvider(address string) *DDGSProvider {
 	}
 }
 
+// Search forwards the normalized request to DDGS and converts its results into
+// the gateway's compact Result shape.
 func (p *DDGSProvider) Search(ctx context.Context, req Request) (Results, error) {
 	ctx, span := p.tracer.Start(ctx, "DDGSProvider.Search")
 	defer span.End()
@@ -102,6 +106,8 @@ func (p *DDGSProvider) Search(ctx context.Context, req Request) (Results, error)
 func (p *DDGSProvider) newRequest(ctx context.Context, req Request) (*http.Request, error) {
 	searchUrl := fmt.Sprintf("%s/search/text", p.address)
 
+	// DDGS owns backend-specific defaults and limits. Zero-value fields are
+	// omitted so DDGS can use its configured defaults.
 	r := ddgsSearchRequest{
 		Query:      req.Query,
 		Region:     req.Region,

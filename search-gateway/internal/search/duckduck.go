@@ -32,7 +32,8 @@ func NewDuckDuckGoProvider() *DuckDuckGoProvider {
 	}
 }
 
-// Search scrapes html.duckduckgo.com for the top N results.
+// Search scrapes html.duckduckgo.com and applies Searchbase's optional local
+// result cap because DuckDuckGo HTML does not expose a per-request result count.
 func (p *DuckDuckGoProvider) Search(ctx context.Context, sr Request) (Results, error) {
 	ctx, span := p.tracer.Start(ctx, "DuckDuckGoProvider.Search")
 	defer span.End()

@@ -12,6 +12,7 @@ type sloggerMiddleware struct {
 	logger *slog.Logger
 }
 
+// GinSlogger returns privacy-preserving structured request logging middleware.
 func GinSlogger(logger *slog.Logger) gin.HandlerFunc {
 	m := &sloggerMiddleware{
 		logger: logger.With(slog.String("component", "gin")),

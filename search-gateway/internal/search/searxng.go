@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// SearxngProvider connects the gateway to an external SearXNG instance.
 type SearxngProvider struct {
 	client  *http.Client
 	address string
@@ -36,6 +37,7 @@ type searxngResponse struct {
 	Results []searxngResult `json:"results"`
 }
 
+// NewSearxngProvider creates a SearXNG provider that targets the given base URL.
 func NewSearxngProvider(address string) *SearxngProvider {
 	return &SearxngProvider{
 		client: &http.Client{
@@ -46,6 +48,8 @@ func NewSearxngProvider(address string) *SearxngProvider {
 	}
 }
 
+// Search sends the query to SearXNG and applies Searchbase's optional local
+// result cap because SearXNG does not expose a per-request result count.
 func (p *SearxngProvider) Search(ctx context.Context, req Request) (Results, error) {
 	ctx, span := p.tracer.Start(ctx, "SearxngProvider.Search")
 	defer span.End()
