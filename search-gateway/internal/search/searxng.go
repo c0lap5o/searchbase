@@ -54,10 +54,57 @@ func (p *SearxngProvider) Search(ctx context.Context, req Request) (Results, err
 		attribute.String("search.provider", "searxng"),
 	)
 
-	searchUrl, err := url.Parse(strings.TrimRight(p.address, "/") + "/search")
+	sr, err := p.newRequest(ctx, req)
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "failed to parse address")
+		span.SetStatus(codes.Error, "failed to create request")
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := p.client.Do(sr)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "http request failed")
+		return nil, fmt.Errorf("failed to execute searxng request: %w", err)
+	}
+	//nolint:errcheck
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		err := fmt.Errorf("unexpected status code from provider: %d", resp.StatusCode)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "non-200 response")
+		return nil, err
+	}
+
+	var parsedResp searxngResponse
+	if err := json.NewDecoder(resp.Body).Decode(&parsedResp); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "failed to decode response")
+		return nil, fmt.Errorf("failed to decode provider response: %w", err)
+	}
+
+	var results Results
+	for i, r := range parsedResp.Results {
+		if req.Limit != 0 {
+			if i >= req.Limit {
+				break
+			}
+		}
+		results = append(results, Result{
+			Title:   r.Title,
+			URL:     r.URL,
+			Snippet: r.Content,
+		})
+	}
+
+	span.SetAttributes(attribute.Int("search.results_count", len(results)))
+	return results, nil
+}
+
+func (p *SearxngProvider) newRequest(ctx context.Context, req Request) (*http.Request, error) {
+	searchUrl, err := url.Parse(strings.TrimRight(p.address, "/") + "/search")
+	if err != nil {
 		return nil, fmt.Errorf("invalid searxng address: %w", err)
 	}
 
@@ -99,50 +146,10 @@ func (p *SearxngProvider) Search(ctx context.Context, req Request) (Results, err
 	}
 
 	searchUrl.RawQuery = q.Encode()
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, searchUrl.String(), nil)
+	searxngRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, searchUrl.String(), nil)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "failed to create http request")
-		return nil, fmt.Errorf("failed to create searxng request: %w", err)
-	}
-
-	resp, err := p.client.Do(httpReq)
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "http request failed")
-		return nil, fmt.Errorf("failed to execute searxng request: %w", err)
-	}
-	//nolint:errcheck
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected status code from provider: %d", resp.StatusCode)
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "non-200 response")
 		return nil, err
 	}
 
-	var parsedResp searxngResponse
-	if err := json.NewDecoder(resp.Body).Decode(&parsedResp); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "failed to decode response")
-		return nil, fmt.Errorf("failed to decode provider response: %w", err)
-	}
-
-	var results Results
-	for i, r := range parsedResp.Results {
-		if req.Limit != 0 {
-			if i >= req.Limit {
-				break
-			}
-		}
-		results = append(results, Result{
-			Title:   r.Title,
-			URL:     r.URL,
-			Snippet: r.Content,
-		})
-	}
-
-	span.SetAttributes(attribute.Int("search.results_count", len(results)))
-	return results, nil
+	return searxngRequest, nil
 }
