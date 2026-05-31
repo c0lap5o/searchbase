@@ -69,6 +69,8 @@ func NewProvider(provider *settings.SearchProvider) (SearchProvider, error) {
 		return NewDuckDuckGoProvider(), nil
 	case "brave":
 		return NewBraveProvider(provider.Token()), nil
+	case "mojeek":
+		return NewMojeekProvider(provider.Token()), nil
 	}
 
 	return nil, fmt.Errorf("unsupported provider: %s", provider.Name())

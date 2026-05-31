@@ -5,11 +5,12 @@ weight: 40
 
 Searchbase uses a hybrid microservice architecture built for horizontal scalability:
 
-1. **`search-gateway` (Go & Gin):** The front-facing orchestrator. It handles incoming REST and MCP requests, scrapes DuckDuckGo natively (HTML version) for top URLs, calls the official Brave Search API when configured, and acts as a router for optional search backends.
+1. **`search-gateway` (Go & Gin):** The front-facing orchestrator. It handles incoming REST and MCP requests, scrapes DuckDuckGo natively (HTML version) for top URLs, calls official provider APIs when configured, and acts as a router for optional search backends.
 2. **`crawl-worker` (Python & [Crawl4AI](https://github.com/unclecode/crawl4ai)):** The internal heavy-lifter. A headless browser that navigates to the URLs, executes JavaScript (if requested), bypasses anti-bot measures, and distills the DOM into pristine Markdown.
 3. **`ddgs` (Python) - *Optional*:** A lightweight internal microservice utilizing the [duckduckgo_search](https://github.com/deedy5/duckduckgo_search) package. It serves as an optional search backend to provide advanced metasearch capabilities and support for multiple underlying search engines.
 4. **`searxng` - *Optional*:** Support for connecting to an external SearXNG instance as a backend provider for metasearch capabilities.
 5. **Brave Search API - *Optional*:** Direct Go gateway integration with Brave's official web search API. Requires `SEARCHBASE_SEARCH_PROVIDER=brave` and `SEARCHBASE_BRAVE_API_TOKEN`.
+6. **Mojeek Search API - *Optional*:** Direct Go gateway integration with Mojeek's official web search API. Requires `SEARCHBASE_SEARCH_PROVIDER=mojeek` and `SEARCHBASE_MOJEEK_API_KEY`.
 
 ---
 

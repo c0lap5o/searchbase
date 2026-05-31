@@ -60,10 +60,11 @@ The `search-gateway` can be configured using the following environment variables
 | :--- | :--- | :--- |
 | `SEARCHBASE_PORT` | `8080` | The port the gateway listens on. |
 | `SEARCHBASE_CRAWL_WORKER_ADDRESS` | `http://localhost:8000` | The internal URL of the Python crawl worker. |
-| `SEARCHBASE_SEARCH_PROVIDER` | `searchbase_ddg` | The default search provider to use (`searchbase_ddg`, `ddgs`, `searxng`, or `brave`). |
+| `SEARCHBASE_SEARCH_PROVIDER` | `searchbase_ddg` | The default search provider to use (`searchbase_ddg`, `ddgs`, `searxng`, `brave`, or `mojeek`). |
 | `SEARCHBASE_DDGS_PROVIDER_ADDRESS` | `http://localhost:8001` | Optional. The URL to the DDGS engine, if `ddgs` provider is used. |
 | `SEARCHBASE_SEARXNG_PROVIDER_ADDRESS` | *(empty)* | Optional. The URL to the SearXNG instance, if `searxng` provider is used (e.g. `http://localhost:8080`). |
 | `SEARCHBASE_BRAVE_API_TOKEN` | *(empty)* | Required when `SEARCHBASE_SEARCH_PROVIDER=brave`. Brave Search API subscription token. |
+| `SEARCHBASE_MOJEEK_API_KEY` | *(empty)* | Required when `SEARCHBASE_SEARCH_PROVIDER=mojeek`. Mojeek Search API key. |
 | `SEARCHBASE_ADDRESS` | *(empty)* | Optional. Used to override the base URL sent to MCP clients for SSE connections. **Reverse Proxy Note:** If deploying Searchbase behind a reverse proxy (like Traefik, Nginx, or Cloudflare Tunnels), leave this blank. The server will use relative paths, allowing the proxy to handle domain routing seamlessly. Set this only if you need to force a specific absolute URL. |
 | `SEARCHBASE_LOG_LEVEL` | `error` | Log level for structured logging (`debug`, `info`, `warn`, `error`). |
 | `SEARCHBASE_LOG_FORMAT` | `json` | Log format (`json` or `text`). |
@@ -85,6 +86,7 @@ Searchbase initializes one search provider at startup through `SEARCHBASE_SEARCH
 | `ddgs` | Moderate | Lightweight metasearch | Runs a small DDGS backend service and supports multiple engines. |
 | `searxng` | Advanced | Full private metasearch | Requires external SearXNG instance. JSON search output must be enabled. |
 | `brave` | Easy | Official independent search API | Uses Brave Search API directly from the Go gateway. Requires `SEARCHBASE_BRAVE_API_TOKEN`. |
+| `mojeek` | Easy | Official independent search API | Uses Mojeek Search API directly from the Go gateway. Requires `SEARCHBASE_MOJEEK_API_KEY`. |
 
 ## Native DuckDuckGo Backend
 
@@ -147,6 +149,19 @@ The `timelimit` request field maps to Brave freshness filters: `d` to `pd`, `w` 
 
 The `region` request field can provide Brave country and language hints. Searchbase maps supported country-language style values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted. Brave also supports `ALL` as a country value.
 
+## Mojeek Search API Backend
+
+`mojeek` connects Searchbase directly to the official [Mojeek Search API](https://www.mojeek.com/services/search/web-search-api/).
+
+```bash
+SEARCHBASE_SEARCH_PROVIDER=mojeek
+SEARCHBASE_MOJEEK_API_KEY=your_mojeek_search_api_key
+```
+
+This backend returns Mojeek web results as compact Searchbase results using each result's `title`, `url`, and `desc`.
+
+The `limit` request field maps to Mojeek's `t` parameter. Omit `limit` or set it to `0` to use Mojeek's default result count.
+
 ## Choosing a Backend
 
 Start with `searchbase_ddg` if you only need a quick, low-maintenance deployment.
@@ -156,6 +171,8 @@ Move to `ddgs` if you want lightweight metasearch without managing a full privat
 Use `searxng` if you already run SearXNG or want full control over metasearch engines, privacy settings, and routing.
 
 Use `brave` if you want a cloud-safe official search API backed by Brave's independent index.
+
+Use `mojeek` if you want a cloud-safe official search API backed by Mojeek's independent index.
 
 ## Production Notes
 

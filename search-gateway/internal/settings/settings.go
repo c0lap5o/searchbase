@@ -49,6 +49,8 @@ func NewSettings() (*Settings, error) {
 		providerAddress = v.GetString("SEARXNG_PROVIDER_ADDRESS")
 	case "brave":
 		token = v.GetString("BRAVE_API_TOKEN")
+	case "mojeek":
+		token = v.GetString("MOJEEK_API_KEY")
 	}
 
 	s := &Settings{

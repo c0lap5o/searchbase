@@ -20,11 +20,11 @@ The front-facing orchestrator. Built in Go for high concurrency, low memory foot
     *   Expose MCP Server over SSE (`/mcp/sse` and `/mcp/message`) and Streamable HTTP (`/mcp/http`).
     *   Auto-generate OpenAPI specs.
     *   Scrape DuckDuckGo (HTML version: `html.duckduckgo.com`) to extract top URLs when using the native `searchbase_ddg` provider.
-    *   Call the official Brave Search API when configured with `SEARCHBASE_SEARCH_PROVIDER=brave` and `SEARCHBASE_BRAVE_API_TOKEN`.
+    *   Call official provider APIs when configured, including Brave (`SEARCHBASE_SEARCH_PROVIDER=brave` and `SEARCHBASE_BRAVE_API_TOKEN`) and Mojeek (`SEARCHBASE_SEARCH_PROVIDER=mojeek` and `SEARCHBASE_MOJEEK_API_KEY`).
     *   Return compact search results (`title`, `url`, `snippet`) without automatically fetching page content.
     *   Fetch page content only through `/api/v1/fetch` or the MCP `fetch_url` tool when the client/LLM explicitly requests it.
     *   **Configuration:** Uses Viper library with centralized `settings` package (`internal/settings`) enforcing a strict `SEARCHBASE_` prefix for all environment variables (e.g., `SEARCHBASE_PORT`, `SEARCHBASE_CRAWL_WORKER_ADDRESS`, `SEARCHBASE_LOG_LEVEL`). Supports defaults and automatic env var binding.
-*   **Design Pattern:** Uses Interfaces (e.g., `SearchProvider`) to allow easy plugging of search APIs and metasearch providers without changing core logic. Current providers include native DuckDuckGo HTML (`searchbase_ddg`), DDGS (`ddgs`), SearXNG (`searxng`), and Brave Search API (`brave`).
+*   **Design Pattern:** Uses Interfaces (e.g., `SearchProvider`) to allow easy plugging of search APIs and metasearch providers without changing core logic. Current providers include native DuckDuckGo HTML (`searchbase_ddg`), DDGS (`ddgs`), SearXNG (`searxng`), Brave Search API (`brave`), and Mojeek Search API (`mojeek`).
 
 ### B. Component 2: `crawl-worker` (Python)
 The internal heavy-lifter. Completely hidden from the outside world.
@@ -107,7 +107,7 @@ The internal heavy-lifter. Completely hidden from the outside world.
 ```
 
 ### Go Gateway MCP Server Tools
-*   **`web_search`**: Searches the web using the configured gateway search provider and returns the top results. Takes `query`, optional `limit`, `engine` (requires `ddgs` or `searxng` provider), `region`, `timelimit`, `safesearch`, and `page` arguments. `limit` is an optional upper bound; omitted or `0` uses the provider or search engine default. Brave maps supported country-language style `region` values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted. Provider failures are returned as safe provider-specific messages without exposing search queries, request bodies, tokens, or raw upstream URLs.
+*   **`web_search`**: Searches the web using the configured gateway search provider and returns the top results. Takes `query`, optional `limit`, `engine` (requires `ddgs` or `searxng` provider), `region`, `timelimit`, `safesearch`, and `page` arguments. `limit` is an optional upper bound; omitted or `0` uses the provider or search engine default. Brave maps supported country-language style `region` values such as `us-en` to Brave `country=US` and `search_lang=en`; unsupported country or language parts are omitted. Mojeek maps `limit` to `t`, maps `timelimit` values `d`, `m`, and `y` to `since`, intentionally does not support `w`, and intentionally does not support `page` yet. Provider failures are returned as safe provider-specific messages without exposing search queries, request bodies, tokens, or raw upstream URLs.
 *   **`fetch_url`**: Fetches the content of a single URL directly and extracts optimized markdown. Takes `url` and `js_render` arguments.
 
 ### Python Worker Internal API
@@ -179,7 +179,8 @@ To ensure reliable and fast multi-architecture builds, the project strictly adhe
 ### Phase 2: Enhanced Search & Aggregation (In Progress)
 - [x] **DDGS Microservice:** Integrate `ddgs` as an internal Python API for fallback and multi-engine search.
 - [x] **Brave Search API Provider:** Implement native Go support for the official Brave Search API. Configure with `SEARCHBASE_SEARCH_PROVIDER=brave` and `SEARCHBASE_BRAVE_API_TOKEN`.
-- [ ] **Additional Native Cloud Providers:** Implement native Go support for other major search engine APIs when viable (Google Search API, Bing, Mojeek, etc.).
+- [x] **Mojeek Search API Provider:** Implement native Go support for the official Mojeek Search API. Configure with `SEARCHBASE_SEARCH_PROVIDER=mojeek` and `SEARCHBASE_MOJEEK_API_KEY`.
+- [ ] **Additional Native Cloud Providers:** Implement native Go support for other major search engine APIs when viable (Google Search API, Bing, etc.).
 - [ ] **Engine Selection:** Allow clients to select specific search engines via the API.
 - [ ] **Result Aggregation:** Support searching from multiple search engines concurrently and aggregating/deduplicating the results.
 

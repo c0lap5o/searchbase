@@ -43,7 +43,18 @@ tasks:
         go run ./cmd/server/main.go
     env:
       SEARCHBASE_SEARCH_PROVIDER: brave
-      SEARCHBASE_BRAVE_API_TOKEN: 
+
+  run:mojeek:
+    desc: "Run the search gateway locally with mojeek provider"
+    cmds: 
+      - |
+        export SEARCHBASE_MOJEEK_API_KEY=$(infisical secrets get --plain \
+          --domain="https://eu.infisical.com" \
+          --projectId {{.INFISICAL_PROJECT_ID}} \
+          --env prod mojeek)
+        go run ./cmd/server/main.go
+    env:
+      SEARCHBASE_SEARCH_PROVIDER: mojeek
 
 
   fmt:

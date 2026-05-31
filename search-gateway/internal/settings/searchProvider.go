@@ -31,6 +31,11 @@ func (sp *SearchProvider) validate() error {
 			return fmt.Errorf("provider API Token not set: searchbase provider brave requires SEARCHBASE_BRAVE_API_TOKEN")
 		}
 		return nil
+	case "mojeek":
+		if sp.token == "" {
+			return fmt.Errorf("provider API Token not set: searchbase provider mojeek requires SEARCHBASE_MOJEEK_API_KEY")
+		}
+		return nil
 	}
 
 	return fmt.Errorf("unsupported search provider: %s", sp.name)
