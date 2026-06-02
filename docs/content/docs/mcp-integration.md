@@ -3,7 +3,7 @@ title: "MCP Integration"
 weight: 20
 ---
 
-If your LLM client supports MCP (like Claude Desktop, Cursor, LM Studio, OpenWebUI, or Opencode), you can plug Searchbase directly into it using one of the supported transports.
+If your LLM client supports MCP (like Claude Desktop, Cursor, LM Studio, OpenWebUI, Opencode, or Neovim CodeCompanion), you can plug Searchbase directly into it using one of the supported transports.
 
 - **MCP SSE Endpoint:** `http://localhost:8080/mcp/sse`
 - **MCP Streamable HTTP Endpoint:** `http://localhost:8080/mcp/http`
@@ -89,6 +89,81 @@ If you restrict tools in Opencode, enable the Searchbase MCP server tools:
 ```
 
 Replace `localhost` with your Searchbase server address when Opencode runs on a different machine.
+
+## Neovim CodeCompanion
+
+CodeCompanion currently supports stdio MCP servers, but does not support remote SSE or Streamable HTTP MCP servers directly. Because Searchbase exposes remote MCP transports, the simplest CodeCompanion setup is to expose Searchbase as command tools that call the REST API.
+
+Add only the Searchbase tools to your `codecompanion.setup()` config:
+
+```lua
+require("codecompanion").setup({
+  interactions = {
+    chat = {
+      tools = {
+        opts = {
+          default_tools = {
+            "searchbase_search",
+            "searchbase_fetch",
+          },
+        },
+        ["searchbase_search"] = {
+          extends = "cmd_tool",
+          description = "Search the web using Searchbase",
+          opts = { require_approval_before = true },
+          name = "searchbase_search",
+          system_prompt = [[You have access to a web search tool called searchbase_search. Use it to search the web for information.]],
+          schema = {
+            properties = {
+              query = {
+                type = "string",
+                description = "The search query to look up on the web",
+              },
+            },
+            required = { "query" },
+          },
+          build_cmd = function(args)
+            local data = vim.json.encode({ query = args.query, limit = 5 })
+            local escaped_data = vim.fn.shellescape(data)
+            return "curl -s -X POST http://localhost:8080/api/v1/search -H 'Content-Type: application/json' -d " .. escaped_data
+          end,
+        },
+        ["searchbase_fetch"] = {
+          extends = "cmd_tool",
+          description = "Fetch optimized web content using Searchbase",
+          opts = { require_approval_before = true },
+          name = "searchbase_fetch",
+          system_prompt = [[You have access to a web fetch tool called searchbase_fetch. Use it to fetch optimized Markdown from a URL.]],
+          schema = {
+            properties = {
+              url = {
+                type = "string",
+                description = "The URL to fetch",
+              },
+              js_render = {
+                type = "boolean",
+                description = "Whether to render website JavaScript",
+              },
+            },
+            required = { "url" },
+            optional = { "js_render" },
+          },
+          build_cmd = function(args)
+            if args.js_render == nil then
+              args.js_render = false
+            end
+            local data = vim.json.encode({ url = args.url, js_render = args.js_render })
+            local escaped_data = vim.fn.shellescape(data)
+            return "curl -s -X POST http://localhost:8080/api/v1/fetch -H 'Content-Type: application/json' -d " .. escaped_data
+          end,
+        },
+      },
+    },
+  },
+})
+```
+
+Replace `localhost` with your Searchbase server address when Neovim runs on a different machine. Keep `vim.fn.shellescape()` around the JSON payload so queries and URLs are escaped safely before `curl` runs.
 
 ## Claude Desktop / Cursor
 

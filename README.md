@@ -5,7 +5,7 @@
 
 **SEARCHBASE** is a self-hosted, highly efficient, privacy-focused Search Engine designed explicitly for **AI Agents and LLMs**. 
 
-It natively supports the **Model Context Protocol (MCP)**, making it a plug-and-play web search tool for LLM UIs like Claude Desktop, Cursor, OpenWebUI, and Opencode.
+It natively supports the **Model Context Protocol (MCP)**, making it a plug-and-play web search tool for LLM UIs like Claude Desktop, Cursor, OpenWebUI, Opencode, and Neovim CodeCompanion.
 
 ---
 
@@ -25,7 +25,7 @@ This repository is my independent open-source project. It will remain separate f
 
 All documentation is available on the dedicated documentation site. Please visit [docs.searchbase.md](https://docs.searchbase.md) for:
 - Installation & Getting Started
-- MCP Integration Guides (OpenWebUI, Claude, Cursor, Opencode)
+- MCP Integration Guides (OpenWebUI, Claude, Cursor, Opencode, Neovim CodeCompanion)
 - REST API Reference
 - Configuration & Architecture
 - Self-Hosting Instructions
