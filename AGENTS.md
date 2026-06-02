@@ -6,7 +6,7 @@ This file (`AGENTS.md`) is the single source of truth for the project's architec
 ## 1. Project Overview
 A self-hosted, highly efficient, privacy-focused Search Engine designed explicitly for AI Agents and LLMs. It bypasses the need for paid search APIs (like Tavily or Bing) and avoids the rate-limiting and formatting issues of standard SearXNG instances.
 
-It provides clean, token-optimized Markdown ready for LLM context windows, and natively supports the **Model Context Protocol (MCP)** for plug-and-play integration with modern LLM UIs (OpenWebUI, Claude Desktop, Cursor, etc.).
+It provides clean, token-optimized Markdown ready for LLM context windows, and natively supports the **Model Context Protocol (MCP)** for plug-and-play integration with modern LLM UIs (OpenWebUI, Claude Desktop, Cursor, Opencode, etc.).
 
 ## 2. System Architecture
 The system uses a **Hybrid Microservice Architecture** designed for Kubernetes:

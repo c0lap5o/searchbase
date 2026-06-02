@@ -3,7 +3,7 @@ title: "MCP Integration"
 weight: 20
 ---
 
-If your LLM client supports MCP (like Claude Desktop, Cursor, LM Studio, or OpenWebUI), you can plug Searchbase directly into it using one of the supported transports.
+If your LLM client supports MCP (like Claude Desktop, Cursor, LM Studio, OpenWebUI, or Opencode), you can plug Searchbase directly into it using one of the supported transports.
 
 - **MCP SSE Endpoint:** `http://localhost:8080/mcp/sse`
 - **MCP Streamable HTTP Endpoint:** `http://localhost:8080/mcp/http`
@@ -58,6 +58,37 @@ If LM Studio asks for fields instead of raw JSON, use:
 | URL | `http://localhost:8080/mcp/sse` |
 
 Once enabled, LM Studio can call `web_search` for discovery and `fetch_url` when it needs full page content.
+
+## Opencode
+
+Opencode can connect to Searchbase through the remote MCP SSE endpoint.
+
+Add the Searchbase MCP server to your `opencode.json` or `opencode.jsonc` config:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "searchbase": {
+      "type": "remote",
+      "url": "http://localhost:8080/mcp/sse",
+      "enabled": true
+    }
+  }
+}
+```
+
+If you restrict tools in Opencode, enable the Searchbase MCP server tools:
+
+```json
+{
+  "tools": {
+    "searchbase": true
+  }
+}
+```
+
+Replace `localhost` with your Searchbase server address when Opencode runs on a different machine.
 
 ## Claude Desktop / Cursor
 
